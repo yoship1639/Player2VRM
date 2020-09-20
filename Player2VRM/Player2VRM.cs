@@ -248,6 +248,10 @@ namespace Player2VRM
 
             foreach (var smr in __instance.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
+                foreach (var mat in smr.materials)
+                {
+                    mat.SetFloat("_EnableTextureTransparent", 1.0f);
+                }
                 smr.enabled = false;
                 Transform trans = smr.transform;
                 while (vrmModel != null && trans != null)
