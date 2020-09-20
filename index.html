@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+	<meta charset="utf-8">
+	<title>Player2VRM MODの導入方法</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+</head>
+
+<body>
+
+	<section class="hero is-dark">
+		<div class="hero-body">
+			<div class="container">
+				<h1 class="title">
+					Player2VRM MODの導入方法
+				</h1>
+				<h2 class="subtitle is-6">
+					クラフトピアでプレイヤーモデルを任意のVRMモデルに差し替えるmod
+				</h2>
+			</div>
+		</div>
+	</section>
+
+	<section class="section">
+		<div class="container">
+			<div class="field">
+				<div class="content">
+					<div class="box">
+						<img src="img/img000.png">
+					</div>
+				</div>
+				<div class="content">
+					<h3 class="title is-3">
+						※諸注意
+					</h3>
+					<ul>
+						<li>本MODはクラフトピア専用のMODです。</li>
+						<li>本MODは現時点(2020/09/21)では「<b>シングル専用</b>」となっています。<b>マルチで使用しないでください！</b>不具合が起こる可能性があります。</li>
+						<li>バグで起動できない可能性があります。<a href="https://twitter.com/yoship1639" target="_blank" rel="noopener noreferrer">@yoship1639</a>までご連絡ください。</li>
+						<li>マテリアル(シェーダ)の互換性の問題でモデルの見た目が崩壊する可能性があります。</li>
+						<li>公式のバージョンアップで本MODが動作しなくなる可能性があります。作者までご一報ください。</li>
+						<li>本MODを利用する前に、<b>必ずセーブデータのバックアップ</b>を取ってください。不具合からセーブデータが壊れてしまう可能性があります！</li>
+						<li>もう一度言います、<b>必ずセーブデータのバックアップ</b>を取ってください。「3. 始める前の準備」にバックアップの取り方を記載しています。</li>
+						<li>本MODを利用した事によるいかなる損害も作者は一切の責任を負いません。自己の責任の上でご利用下さい。</li>
+						<li>本MODに関する如何なる問い合わせをクラフトピアの運営元にしないで下さい。</li>
+						<li>以上を理解したうえで、良識の範囲内で楽しいクラフトピアライフを送りましょう！</li>
+					</ul>
+				</div>
+				<div class="content">
+					<h3 class="title is-3">
+						1. 「BepInEx」の導入
+					</h3>
+					<p>
+						① BepInExの配布ページ(<a href="https://github.com/BepInEx/BepInEx/releases" target="_blank" rel="noopener noreferrer">https://github.com/BepInEx/BepInEx/releases</a>)から「<b>BepInEx_64_5.3.0.0.zip</b>」をダウンロードしてください。
+					</p>
+					<div class="box">
+						<img src="img/img001.png">
+					</div>
+					<p>
+						②「BepInEx_64_5.3.0.0.zip」を解凍し、<b>中身をすべて</b>「Craftopia」フォルダ内に入れてください。
+					</p>
+					<div class="box">
+						<img src="img/img002.png">
+					</div>
+					<p>
+						※Craftopiaフォルダは以下の手順で確認できます。
+					</p>
+					<ul>
+						<li>SteamのCraftopiaの [プロパティ] - [ローカルファイルタブ] - [ローカルファイルの閲覧]</li>
+					</ul>
+					<p>
+						「Craftopia」フォルダ内が以下の様になっていれば大丈夫のはずです。
+					</p>
+					<ul>
+						<li>BepInEx (フォルダ)</li>
+						<li>Craftopia_Data (フォルダ)</li>
+						<li>MonoBleedingEdge (フォルダ)</li>
+						<li>.gitkeep</li>
+						<li>changelog.txt</li>
+						<li>doorstop_config.ini</li>
+						<li>UnityCrashHandler64.exe</li>
+						<li>UnityPlayer.dll</li>
+						<li>winhttp.dll</li>
+					</ul>
+					<p>
+						③ Craftopiaを起動します。タイトル画面に来たらそのまま終了させてください。自動的に必要なファイルが生成されます。
+					</p>
+					<p>
+						④ 「Craftopia/BepInEx」フォルダ内に以下のファイル群が出来ていることを確認してください。
+					</p>
+					<div class="box">
+						<img src="img/img003.png">
+					</div>
+					<p>
+						以上でBepInExの導入は完了です。
+					</p>
+				</div>
+
+				<div class="content">
+					<h3 class="title is-3">
+						2. 「Player2VRM」の導入
+					</h3>
+					<p>
+						① Player2VRMの配布ページ(<a href="https://github.com/yoship1639/Player2VRM/releases" target="_blank" rel="noopener noreferrer">https://github.com/yoship1639/Player2VRM/releases</a>)から「<b>Player2VRM_x.x.x.zip</b>」をダウンロードしてください。（x.x.xは最新のバージョンをダウンロードしてください）
+					</p>
+					<div class="box">
+						TODO:
+					</div>
+					<p>
+						② 「Player2VRM_x.x.x.zip」を解凍すると「Craftopia_Managedに入れるdll」フォルダと「Player2VRM.dll」が入っています。それぞれ以下の場所に配置してください。
+					</p>
+					<ul>
+						<li>「Craftopia_Managedに入れるdll」フォルダの<b>中身全部</b>を「Craftopia/Craftopia_Data/Managed」フォルダ内にいれる</li>
+						<li>「Player2VRM.dll」を「Craftopia/BepInEx/plugins」フォルダ内にいれる</li>
+					</ul>
+					<div class="box">
+						TODO:
+					</div>
+					<p>
+						以上でPlayer2VRMの導入は完了です。
+					</p>
+				</div>
+				
+				<div class="content">
+					<h3 class="title is-3">
+						3. 始める前の準備
+					</h3>
+					<p>
+						① セーブデータのバックアップを取って下さい。本MODでセーブデータが壊れる可能性は否定できません。以下のフォルダ内にセーブデータが入っています。丸ごとコピーしてどこかに避難しておいてください。
+					</p>
+					<ul>
+						<li>「ユーザーフォルダ/AppData/LocalLow/PocketPair/Craftopia/Save」</li>
+					</ul>
+					<p>
+						※セーブデータが壊れた場合は、バックアップを丸ごと元の場所に戻し、直ちに本MODの使用を停止してください。
+					</p>
+					<div class="box">
+						<img src="img/img006.png">
+					</div>
+					<p>
+						② 「Craftopia」フォルダ内に「<b>Player2VRM</b>」フォルダを作成してください。
+					</p>
+					<p>
+						③ 「Player2VRM」フォルダ内にプレイヤーモデルと差し替えたいVRMファイルを「<b>player.vrm</b>」という名前で入れてください。
+					</p>
+					<div class="box">
+						<img src="img/img007.png">
+					</div>
+					<p>
+						以上で準備完了です。クラフトピアを起動しプレイヤーモデルがVRMモデルに差し変わっていることを確認出来たら成功です。お疲れ様でした。
+					</p>
+					<p>
+						差し変わっていなかった場合。今回の手順をもう一度見直してやり直してください。
+					</p>
+				</div>
+
+				<div class="content">
+					<h3 class="title is-3">
+						※ Player2VRM MODをアンインストールする場合
+					</h3>
+					<p>
+						① 「Craftopia」フォルダにある「Player2VRM」フォルダを削除してください。
+					</p>
+					<p>
+						① 「Craftopia/BepInEx/plugins」フォルダにある「Player2VRM.dll」を削除してください。
+					</p>
+					<p>
+						以上で本MODのアンインストールは完了です。
+					</p>
+				</div>
+
+			</div>
+			<div id="material_list"></div>
+		</div>
+	</section>
+
+	<footer class="footer">
+		<div class="container">
+			<div class="content has-text-centered">
+				<p>
+					本MODはオープンソースです。ソースコードは<a href="https://github.com/yoship1639/Player2VRM" target="_blank" rel="noopener noreferrer">こちら</a>
+				</p>
+				<p>
+					2020 ©yoship1639
+				</p>
+			</div>
+		</div>
+	</footer>
+
+</body>
+
+</html>
