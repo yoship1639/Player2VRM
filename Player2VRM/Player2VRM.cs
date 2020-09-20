@@ -292,6 +292,28 @@ namespace Player2VRM
             }
             catch { }
 
+            // モデルスケール調整
+            var settingsPath = Environment.CurrentDirectory + @"\Player2VRM\settings.txt";
+            try
+            {
+                var lines = File.ReadAllLines(settingsPath);
+                foreach (var line in lines)
+                {
+                    try
+                    {
+                        var args = line.Split('=');
+                        if (args.Length != 2) continue;
+                        if (args[0] == "ModelScale")
+                        {
+                            var size = float.Parse(args[1]);
+                            context.Root.transform.localScale *= size;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
             return context.Root;
         }
     }
