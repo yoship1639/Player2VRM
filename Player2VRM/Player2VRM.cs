@@ -256,35 +256,38 @@ namespace Player2VRM
             __result.SetFloat("_DoubleSided", x.doubleSided ? 0 : 2);
             __result.SetFloat("_Cutout", x.alphaCutoff);
 
-            if (x.pbrMetallicRoughness != null)
-            {
-                if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 3)
-                {
-                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
-                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2]).gamma);
-                }
-                else if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 4)
-                {
-                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
-                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2], baseColorFactor2[3]).gamma);
-                }
-                __result.SetFloat("_RefMetallic", x.pbrMetallicRoughness.metallicFactor);
-            }
+            //var MainColorFactor = Settings.ReadFloat("MainColorFactor")
+            //__result.SetColor("_MainColor", new Color(MainColorFactor, MainColorFactor, MainColorFactor));
+
+            //if (x.pbrMetallicRoughness != null)
+            //{
+            //    if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 3)
+            //    {
+            //        float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
+            //        __result.SetColor("_MainColor", new Color(baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2]).gamma);
+            //    }
+            //    else if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 4)
+            //    {
+            //        float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
+            //        __result.SetColor("_MainColor", new Color(baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2], baseColorFactor2[3]).gamma);
+            //    }
+            //    //__result.SetFloat("_RefMetallic", x.pbrMetallicRoughness.metallicFactor);
+            //}
             
 
-            if (x.normalTexture != null && x.normalTexture.index != -1)
-            {
-                __result.SetFloat("_N_F_NM", 1.0f);
-                var func = __instance.GetRefField<MaterialImporter, Func<int, TextureItem>>("GetTextureFunc");
-                TextureItem textureItem4 = func(x.normalTexture.index);
-                if (textureItem4 != null)
-                {
-                    string text2 = "_NormalMap";
-                    __result.SetTexture(text2, textureItem4.ConvertTexture(text2, 1f));
-                    __result.SetFloat("_NormalMapIntensity", x.normalTexture.scale);
-                }
-                SetTextureOffsetAndScale(__result, x.normalTexture, "_NormalMap");
-            }
+            //if (x.normalTexture != null && x.normalTexture.index != -1)
+            //{
+            //    __result.SetFloat("_N_F_NM", 1.0f);
+            //    var func = __instance.GetRefField<MaterialImporter, Func<int, TextureItem>>("GetTextureFunc");
+            //    TextureItem textureItem4 = func(x.normalTexture.index);
+            //    if (textureItem4 != null)
+            //    {
+            //        string text2 = "_NormalMap";
+            //        __result.SetTexture(text2, textureItem4.ConvertTexture(text2, 1f));
+            //        __result.SetFloat("_NormalMapIntensity", x.normalTexture.scale);
+            //    }
+            //    SetTextureOffsetAndScale(__result, x.normalTexture, "_NormalMap");
+            //}
         }
 
         private static void SetTextureOffsetAndScale(Material material, glTFTextureInfo textureInfo, string propertyName)

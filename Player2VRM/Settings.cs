@@ -34,5 +34,21 @@ namespace Player2VRM
 
             return null;
         }
-	}
+
+        public static int ReadInt(string key, int defaultValue = 0)
+        {
+            var str = ReadSettings(key);
+            var res = defaultValue;
+            int.TryParse(str, out res);
+            return res;
+        }
+
+        public static float ReadFloat(string key, float defaultValue = 0.0f)
+        {
+            var str = ReadSettings(key);
+            var res = defaultValue;
+            float.TryParse(str, out res);
+            return res;
+        }
+    }
 }
