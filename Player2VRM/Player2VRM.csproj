@@ -43,6 +43,10 @@
     <Reference Include="DepthFirstScheduler">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\DepthFirstScheduler.dll</HintPath>
     </Reference>
+    <Reference Include="DOTween, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\DOTween.dll</HintPath>
+    </Reference>
     <Reference Include="MeshUtility">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\MeshUtility.dll</HintPath>
     </Reference>
