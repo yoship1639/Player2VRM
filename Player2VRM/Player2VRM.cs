@@ -393,7 +393,11 @@ namespace Player2VRM
         {
             if (vrmModel == null)
             {
+                //カスタムモデル名の取得(設定ファイルにないためLogの出力が不自然にならないよう調整)
+                var ModelStr = Settings.ReadSettings("ModelName");
                 var path = Environment.CurrentDirectory + @"\Player2VRM\player.vrm";
+                if (ModelStr != null)
+                    path = Environment.CurrentDirectory + @"\Player2VRM\" + ModelStr + ".vrm";
 
                 try
                 {
@@ -401,7 +405,10 @@ namespace Player2VRM
                 }
                 catch
                 {
-                    UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
+                    if(ModelStr != null)
+                        UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。settings.txt内のModelNameを確認してください。");
+                    else
+                        UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
                     return;
                 }
 
