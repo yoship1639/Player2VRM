@@ -240,7 +240,7 @@ namespace Player2VRM
                 }
                 catch
                 {
-                    if(pathStr != null)
+                    if(ModelStr != null)
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。settings.txt内のModelNameを確認してください。");
                     else
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
