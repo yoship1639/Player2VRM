@@ -3,6 +3,7 @@ using Oc;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UniGLTF;
 using UnityEngine;
@@ -29,38 +30,24 @@ namespace Player2VRM
     {
         static bool Prefix(OcPlEquip __instance, ref bool isDraw)
         {
-            var str = Settings.ReadSettings("DrawEquipHead");
-            var flag = true;
-            if (__instance.EquipSlot == OcEquipSlot.EqHead && bool.TryParse(str, out flag))
+            if (__instance.EquipSlot == OcEquipSlot.EqHead && !Settings.ReadBool("DrawEquipHead", true))
             {
-                if (!flag)
-                {
-                    isDraw = false;
-                    return true;
-                }
+                isDraw = false;
+                return true;
             }
 
-            str = Settings.ReadSettings("DrawEquipAccessory");
-            flag = true;
-            if (__instance.EquipSlot == OcEquipSlot.Accessory && bool.TryParse(str, out flag))
+            if (__instance.EquipSlot == OcEquipSlot.Accessory && !Settings.ReadBool("DrawEquipAccessory", true))
             {
-                if (!flag)
-                {
-                    isDraw = false;
-                    return true;
-                }
+                isDraw = false;
+                return true;
             }
 
-            str = Settings.ReadSettings("DrawEquipShield");
-            flag = true;
-            if (__instance.EquipSlot == OcEquipSlot.WpSub && bool.TryParse(str, out flag))
+            if (__instance.EquipSlot == OcEquipSlot.WpSub && !Settings.ReadBool("DrawEquipShield", true))
             {
-                if (!flag)
-                {
-                    isDraw = false;
-                    return true;
-                }
+                isDraw = false;
+                return true;
             }
+
             return true;
         }
     }
@@ -79,6 +66,52 @@ namespace Player2VRM
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
                 smr.enabled = false;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(ShaderStore))]
+    [HarmonyPatch("GetShader")]
+    static class ShaderToRealToon
+    {
+        static bool Prefix(ShaderStore __instance, ref Shader __result, glTFMaterial material)
+        {
+            if (Settings.ReadBool("UseRealToonShader", false))
+            {
+                __result = Shader.Find("RealToon/Version 5/Default/Default");
+                return false;
+            }
+            
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(MaterialImporter))]
+    [HarmonyPatch("CreateMaterial")]
+    static class MaterialImporterVRM
+    {
+        static void Postfix(MaterialImporter __instance, ref Material __result, int i, glTFMaterial x, bool hasVertexColor)
+        {
+            __result.SetFloat("_DoubleSided", x.doubleSided ? 0 : 2);
+            __result.SetFloat("_Cutout", x.alphaCutoff);
+
+            if (x.pbrMetallicRoughness != null)
+            {
+                if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 3)
+                {
+                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
+                    var max = baseColorFactor2.Max();
+                    var rate = Mathf.Min(0.688f / max, 1.0f);
+                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0] * rate, baseColorFactor2[1] * rate, baseColorFactor2[2] * rate));
+                }
+                else if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 4)
+                {
+                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
+                    var facotrs = new float[] { baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2] };
+                    var max = facotrs.Max();
+                    var rate = Mathf.Min(0.688f / max, 1.0f);
+                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0] * rate, baseColorFactor2[1] * rate, baseColorFactor2[2] * rate, baseColorFactor2[3]));
+                }
             }
         }
     }
@@ -128,8 +161,18 @@ namespace Player2VRM
         public void Setup(GameObject vrmModel, Animator orgAnim)
         {
             var instance = instancedModel ?? Instantiate(vrmModel);
+            var useRealToon = Settings.ReadBool("UseRealToonShader", false);
             foreach (var sm in instance.GetComponentsInChildren<Renderer>())
+            {
                 sm.enabled = true;
+                if (useRealToon)
+                {
+                    foreach (var mat in sm.materials)
+                    {
+                        mat.SetFloat("_EnableTextureTransparent", 1.0f);
+                    }
+                }
+            }
             instance.transform.SetParent(orgAnim.transform, false);
             PoseHandlerCreate(orgAnim, instance.GetComponent<Animator>());
             instancedModel = instance;
@@ -211,9 +254,12 @@ namespace Player2VRM
 
             foreach (var smr in __instance.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
-                foreach (var mat in smr.materials)
+                if (Settings.ReadBool("UseRealToonShader", false))
                 {
-                    mat.SetFloat("_EnableTextureTransparent", 1.0f);
+                    foreach (var mat in smr.materials)
+                    {
+                        mat.SetFloat("_EnableTextureTransparent", 1.0f);
+                    }
                 }
                 smr.enabled = false;
                 Transform trans = smr.transform;
