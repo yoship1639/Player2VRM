@@ -226,6 +226,18 @@ namespace Player2VRM
         }
     }
 
+    [HarmonyPatch(typeof(AsPl_SprintSwim))]
+    [HarmonyPatch("enter")]
+    static class AsPl_SprintSwimVRM
+    {
+        static void Postfix(AsPl_SprintSwim __instance)
+        {
+            if (OcPlVRM.modelMaster == null) return;
+
+            OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFadeInFixedTime(OcAnimHash.SprintSwim, 0.3f, 0);
+        }
+    }
+
     [HarmonyPatch(typeof(ShaderStore))]
     [HarmonyPatch("GetShader")]
     static class ShaderToRealToon
