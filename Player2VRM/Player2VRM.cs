@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UniGLTF;
@@ -225,99 +226,7 @@ namespace Player2VRM
             anim.SetFloat("MoveSpeed.z", accel.z);
         }
     }
-
-    [HarmonyPatch(typeof(ShaderStore))]
-    [HarmonyPatch("GetShader")]
-    static class ShaderToRealToon
-    {
-        static bool Prefix(ShaderStore __instance, ref Shader __result, glTFMaterial material)
-        {
-            if (material == null)
-            {
-                __result = Shader.Find("Standard");
-                return false;
-            }
-            if (material.extensions != null && material.extensions.KHR_materials_unlit != null)
-            {
-                __result = Shader.Find("RealToon/Version 5/Default/Default");
-                return false;
-            }
-            __result = Shader.Find("Standard");
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(MaterialImporter))]
-    [HarmonyPatch("CreateMaterial")]
-    static class MaterialImporterVRM
-    {
-        static void Postfix(MaterialImporter __instance, ref Material __result, int i, glTFMaterial x, bool hasVertexColor)
-        {
-            __result.SetFloat("_DoubleSided", x.doubleSided ? 0 : 2);
-            __result.SetFloat("_Cutout", x.alphaCutoff);
-
-            //var MainColorFactor = Settings.ReadFloat("MainColorFactor")
-            //__result.SetColor("_MainColor", new Color(MainColorFactor, MainColorFactor, MainColorFactor));
-
-            if (x.pbrMetallicRoughness != null)
-            {
-                if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 3)
-                {
-                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
-                    var max = baseColorFactor2.Max();
-                    var rate = Mathf.Min(0.688f / max, 1.0f);
-                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0] * rate, baseColorFactor2[1] * rate, baseColorFactor2[2] * rate));
-                }
-                else if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 4)
-                {
-                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
-                    var facotrs = new float[] { baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2] };
-                    var max = facotrs.Max();
-                    var rate = Mathf.Min(0.688f / max, 1.0f);
-                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0] * rate, baseColorFactor2[1] * rate, baseColorFactor2[2] * rate, baseColorFactor2[3]));
-                }
-                //__result.SetFloat("_SelfLitIntensity", 1.0f);
-                //__result.SetFloat("_RefMetallic", x.pbrMetallicRoughness.metallicFactor);
-            }
-
-
-            //if (x.normalTexture != null && x.normalTexture.index != -1)
-            //{
-            //    __result.SetFloat("_N_F_NM", 1.0f);
-            //    var func = __instance.GetRefField<MaterialImporter, Func<int, TextureItem>>("GetTextureFunc");
-            //    TextureItem textureItem4 = func(x.normalTexture.index);
-            //    if (textureItem4 != null)
-            //    {
-            //        string text2 = "_NormalMap";
-            //        __result.SetTexture(text2, textureItem4.ConvertTexture(text2, 1f));
-            //        __result.SetFloat("_NormalMapIntensity", x.normalTexture.scale);
-            //    }
-            //    SetTextureOffsetAndScale(__result, x.normalTexture, "_NormalMap");
-            //}
-        }
-
-        //private static void SetTextureOffsetAndScale(Material material, glTFTextureInfo textureInfo, string propertyName)
-        //{
-        //    if (textureInfo.extensions != null && textureInfo.extensions.KHR_texture_transform != null)
-        //    {
-        //        glTF_KHR_texture_transform khr_texture_transform = textureInfo.extensions.KHR_texture_transform;
-        //        Vector2 vector = new Vector2(0f, 0f);
-        //        Vector2 vector2 = new Vector2(1f, 1f);
-        //        if (khr_texture_transform.offset != null && khr_texture_transform.offset.Length == 2)
-        //        {
-        //            vector = new Vector2(khr_texture_transform.offset[0], khr_texture_transform.offset[1]);
-        //        }
-        //        if (khr_texture_transform.scale != null && khr_texture_transform.scale.Length == 2)
-        //        {
-        //            vector2 = new Vector2(khr_texture_transform.scale[0], khr_texture_transform.scale[1]);
-        //        }
-        //        vector.y = (vector.y + vector2.y - 1f) * -1f;
-        //        material.SetTextureOffset(propertyName, vector);
-        //        material.SetTextureScale(propertyName, vector2);
-        //    }
-        //}
-    }
-
+    
     [HarmonyPatch(typeof(OcPlEquip))]
     [HarmonyPatch("setDraw")]
     static class OcPlEquipVRM
@@ -402,6 +311,41 @@ namespace Player2VRM
                 ShowHierarchy(root.GetChild(i), num + 1);
             }
             if (num == 0) UnityEngine.Debug.LogError("ShowHierarchy ------------------------------- End");
+        }
+    }
+
+    [HarmonyPatch(typeof(Shader))]
+    [HarmonyPatch(nameof(Shader.Find))]
+    static class ShaderPatch
+    {
+        static bool Prefix(ref Shader __result, string name)
+        {
+            if (VRMShaders.Shaders.TryGetValue(name, out var shader))
+            {
+                __result = shader;
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    public static class VRMShaders
+    {
+        public static Dictionary<string, Shader> Shaders { get; } = new Dictionary<string, Shader>();
+
+        public static void Initialize()
+        {
+            var bundlePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Player2VRM.shaders");
+            if (File.Exists(bundlePath))
+            {
+                var assetBundle = AssetBundle.LoadFromFile(bundlePath);
+                var assets = assetBundle.LoadAllAssets<Shader>();
+                foreach (var asset in assets)
+                {
+                    Shaders.Add(asset.name, asset);
+                }
+            }
         }
     }
 

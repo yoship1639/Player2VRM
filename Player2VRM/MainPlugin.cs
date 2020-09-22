@@ -18,6 +18,8 @@ namespace Player2VRM
 
         void Awake()
         {
+            VRMShaders.Initialize();
+
             var harmony = new Harmony("com.yoship1639.plugins.player2vrm.patch");
             harmony.PatchAll();
         }

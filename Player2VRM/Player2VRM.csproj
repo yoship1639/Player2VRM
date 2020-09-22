@@ -76,6 +76,9 @@
     <Reference Include="UnityEngine.AnimationModule">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.AudioModule">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
