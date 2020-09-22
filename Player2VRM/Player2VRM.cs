@@ -265,6 +265,27 @@ namespace Player2VRM
                     return true;
                 }
             }
+            
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(OcAccessoryCtrl))]
+    [HarmonyPatch("setAf_DrawFlag")]
+    static class OcAccessoryCtrlVRM
+    {
+        static bool Prefix(OcAccessoryCtrl __instance, OcAccessoryCtrl.AccType type)
+        {
+
+            if (type == OcAccessoryCtrl.AccType.Quiver)
+            {
+                var str = Settings.ReadSettings("DrawEquipArrow");
+                var flag = true;
+                if (bool.TryParse(str, out flag))
+                {
+                    return false;
+                }
+            }
             return true;
         }
     }
