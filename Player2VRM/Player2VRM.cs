@@ -255,6 +255,16 @@ namespace Player2VRM
                 }
             }
 
+            str = Settings.ReadSettings("DrawEquipShield");
+            flag = true;
+            if (__instance.EquipSlot == OcEquipSlot.WpSub && bool.TryParse(str, out flag))
+            {
+                if (!flag)
+                {
+                    isDraw = false;
+                    return true;
+                }
+            }
             return true;
         }
     }
