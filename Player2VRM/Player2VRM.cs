@@ -1,14 +1,9 @@
-﻿using DG.Tweening;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Oc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UniGLTF;
 using UnityEngine;
 using VRM;
@@ -28,205 +23,6 @@ namespace Player2VRM
         }
     }
 
-    [HarmonyPatch(typeof(OcActState))]
-    [HarmonyPatch(nameof(OcActState.animPlay), typeof(string), typeof(int), typeof(float))]
-    static class OcActStateVRM
-    {
-        static bool Prefix(OcActState __instance, string str, int layer = 0, float fadeTime = 0.15f)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var owner = __instance.GetRefField<OcActState, OcCharacter>("_OwnerCharacter");
-            if (owner is OcPlMaster)
-            {
-                if (owner.Animator && owner.Animator.enabled && owner.Animator.gameObject.activeInHierarchy)
-                {
-                    owner.Animator.CrossFadeInFixedTime(str, fadeTime, layer);
-                    OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFadeInFixedTime(str, fadeTime, layer);
-                }
-                return false;
-            }
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(OcActState))]
-    [HarmonyPatch(nameof(OcActState.animPlay), typeof(int), typeof(int), typeof(float))]
-    static class OcActStateVRM2
-    {
-        static bool Prefix(OcActState __instance, int id, int layer = 0, float fadeTime = 0.15f)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var owner = __instance.GetRefField<OcActState, OcCharacter>("_OwnerCharacter");
-            if (owner is OcPlMaster)
-            {
-                if (owner.Animator && owner.Animator.enabled && owner.Animator.gameObject.activeInHierarchy)
-                {
-                    owner.Animator.CrossFadeInFixedTime(id, fadeTime, layer);
-                    OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFadeInFixedTime(id, fadeTime, layer);
-                }
-                return false;
-            }
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(OcActState))]
-    [HarmonyPatch(nameof(OcActState.animPlaySec), typeof(string), typeof(float), typeof(int), typeof(float))]
-    static class OcActStateVRM3
-    {
-        static bool Prefix(OcActState __instance, string str, float startTime = 0f, int layer = 0, float fadeTime = 0.15f)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var owner = __instance.GetRefField<OcActState, OcCharacter>("_OwnerCharacter");
-            if (owner is OcPlMaster)
-            {
-                if (owner.Animator && owner.Animator.enabled && owner.Animator.gameObject.activeInHierarchy)
-                {
-                    owner.Animator.CrossFadeInFixedTime(str, fadeTime, layer, startTime);
-                    OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFadeInFixedTime(str, fadeTime, layer, startTime);
-                }
-                return false;
-            }
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(OcActState))]
-    [HarmonyPatch(nameof(OcActState.animPlaySec), typeof(int), typeof(float), typeof(int), typeof(float))]
-    static class OcActStateVRM4
-    {
-        static bool Prefix(OcActState __instance, int id, float startTime = 0f, int layer = 0, float fadeTime = 0.15f)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var owner = __instance.GetRefField<OcActState, OcCharacter>("_OwnerCharacter");
-            if (owner is OcPlMaster)
-            {
-                if (owner.Animator && owner.Animator.enabled && owner.Animator.gameObject.activeInHierarchy)
-                {
-                    owner.Animator.CrossFadeInFixedTime(id, fadeTime, layer, startTime);
-                    OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFadeInFixedTime(id, fadeTime, layer, startTime);
-                }
-                return false;
-            }
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(OcActState))]
-    [HarmonyPatch(nameof(OcActState.animPlayBase), typeof(string), typeof(float))]
-    static class OcActStateVRM5
-    {
-        static bool Prefix(OcActState __instance, string str, float fadeTime = 0.15f)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var owner = __instance.GetRefField<OcActState, OcCharacter>("_OwnerCharacter");
-            if (owner is OcPlMaster)
-            {
-                if (owner.Animator && owner.Animator.enabled && owner.Animator.gameObject.activeInHierarchy)
-                {
-                    owner.Animator.CrossFadeInFixedTime(str, fadeTime, 0);
-                    OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFadeInFixedTime(str, fadeTime, 0);
-                }
-                return false;
-            }
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(OcActState))]
-    [HarmonyPatch(nameof(OcActState.animPlayBase), typeof(int), typeof(float))]
-    static class OcActStateVRM6
-    {
-        static bool Prefix(OcActState __instance, int id, float fadeTime = 0.15f)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var owner = __instance.GetRefField<OcActState, OcCharacter>("_OwnerCharacter");
-            if (owner is OcPlMaster)
-            {
-                if (owner.Animator && owner.Animator.enabled && owner.Animator.gameObject.activeInHierarchy)
-                {
-                    owner.Animator.CrossFadeInFixedTime(id, fadeTime, 0);
-                    OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFadeInFixedTime(id, fadeTime, 0);
-                }
-                return false;
-            }
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(AsPl_Sprint))]
-    [HarmonyPatch(nameof(AsPl_Sprint.enter))]
-    static class AsPl_SprintVRM
-    {
-        static bool Prefix(AsPl_Sprint __instance)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var pl = __instance.GetRefField<OcActState_Pl, OcPl>("_Pl");
-            __instance.GetRefField<AsPl_Sprint, float>("_RunBlockCheckStartTimer") = 0f;
-            __instance.GetRefField<AsPl_Sprint, float>("_SprintContinueTimer") = 0.2f;
-            if (pl.isActPrev<OcPl.As>(OcPl.As.LandSprint))
-            {
-                __instance.animPlayBase(OcAnimHash.Sprint, 0.25f);
-                return false;
-            }
-            if (pl.isActPrev<OcPl.As>(OcPl.As.RollF) || pl.isActPrev<OcPl.As>(OcPl.As.RollF_Sprint))
-            {
-                __instance.animPlayBase(OcAnimHash.Sprint, 0.25f);
-                return false;
-            }
-            float normalizedTimeOffset = 0f;
-            if (pl.isActPrev<OcPl.As>(OcPl.As.MovementStand))
-            {
-                normalizedTimeOffset = (pl.getAct<OcPl.As>(OcPl.As.MovementStand) as AsPl_MovementStand).RunEndMotRate;
-            }
-            //__instance.animPlaySec(OcAnimHash.Sprint, normalizedTimeOffset, 0, 0.1f);
-            pl.Animator.CrossFade(OcAnimHash.Sprint, 0.1f, 0, normalizedTimeOffset);
-            OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFade(OcAnimHash.Sprint, 0.1f, 0, normalizedTimeOffset);
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(AsPl_MovementStand))]
-    [HarmonyPatch("animPlayMovemnt")]
-    static class AsPl_MovementStandVRM
-    {
-        static bool Prefix(AsPl_MovementStand __instance)
-        {
-            if (OcPlVRM.modelMaster == null) return true;
-
-            var pl = __instance.GetRefField<OcActState_Pl, OcPl>("_Pl");
-            if (pl.isActPrev<OcPl.As>(OcPl.As.Sprint))
-            {
-                AsPl_Sprint asPl_Sprint = pl.getAct<OcPl.As>(OcPl.As.Sprint) as AsPl_Sprint;
-                OcPlVRM.modelMaster.GetComponentInChildren<Animator>().CrossFade(OcAnimHash.MovementStand, 0.6f, 0, asPl_Sprint.SprintEndMotRate);
-            }
-
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(AsPl_MovementBase))]
-    [HarmonyPatch("move")]
-    static class AsPl_MovementBaseVRM
-    {
-        static void Postfix(AsPl_MovementBase __instance)
-        {
-            if (OcPlVRM.modelMaster == null) return;
-
-            var accel = __instance.GetRefField<AsPl_MovementBase, Vector3>("_MoveAccel");
-            var anim = OcPlVRM.modelMaster.GetComponentInChildren<Animator>();
-            anim.SetFloat("MoveSpeed.x", accel.x);
-            anim.SetFloat("MoveSpeed.z", accel.z);
-        }
-    }
-    
     [HarmonyPatch(typeof(OcPlEquip))]
     [HarmonyPatch("setDraw")]
     static class OcPlEquipVRM
@@ -277,43 +73,6 @@ namespace Player2VRM
         }
     }
 
-    public class AnimFitter : MonoBehaviour
-    {
-        private OcPl pl;
-        public Animator masterAnim;
-
-        void Start()
-        {
-            pl = GetComponent<OcPl>();
-        }
-
-        private AnimatorStateInfo prevInfo;
-        void Update()
-        {
-            var info = pl.Animator.GetCurrentAnimatorStateInfo(0);
-            var time = info.normalizedTime;
-
-            masterAnim.speed = pl.Animator.speed;
-            if (prevInfo.shortNameHash != info.shortNameHash && info.shortNameHash == OcAnimHash.MovementStand) masterAnim.ForceStateNormalizedTime(time);
-            if (prevInfo.shortNameHash != info.shortNameHash && info.shortNameHash == OcAnimHash.Sprint) masterAnim.ForceStateNormalizedTime(time);
-
-            prevInfo = info;
-        }
-
-        public static void ShowHierarchy(Transform root, int num = 0)
-        {
-            if (num == 0) UnityEngine.Debug.LogError("ShowHierarchy ------------------------------- Start");
-            string str = "";
-            for (var i = 0; i < num; i++) str += "  ";
-            UnityEngine.Debug.LogWarning(str + root.name + $"【{root.gameObject.layer}】" + " (" + root.GetComponents<Component>().Join(c => c.GetType().Name) + ")" + root.gameObject.activeInHierarchy);
-            for (var i = 0; i < root.childCount; i++)
-            {
-                ShowHierarchy(root.GetChild(i), num + 1);
-            }
-            if (num == 0) UnityEngine.Debug.LogError("ShowHierarchy ------------------------------- End");
-        }
-    }
-
     [HarmonyPatch(typeof(Shader))]
     [HarmonyPatch(nameof(Shader.Find))]
     static class ShaderPatch
@@ -350,13 +109,51 @@ namespace Player2VRM
         }
     }
 
+    class CloneHumanoid : MonoBehaviour
+    {
+        HumanPoseHandler orgPose, vrmPose;
+        HumanPose hp = new HumanPose();
+        GameObject instancedModel;
+
+        public void Setup(GameObject vrmModel, Animator orgAnim)
+        {
+            var instance = instancedModel ?? Instantiate(vrmModel);
+            foreach (var sm in instance.GetComponentsInChildren<Renderer>())
+                sm.enabled = true;
+            instance.transform.SetParent(orgAnim.transform, false);
+            PoseHandlerCreate(orgAnim, instance.GetComponent<Animator>());
+            instancedModel = instance;
+        }
+
+        void PoseHandlerCreate(Animator org, Animator vrm)
+        {
+            OnDestroy();
+            orgPose = new HumanPoseHandler(org.avatar, org.transform);
+            vrmPose = new HumanPoseHandler(vrm.avatar, vrm.transform);
+        }
+
+        void OnDestroy()
+        {
+            if (orgPose != null)
+                orgPose.Dispose();
+            if (vrmPose != null)
+                vrmPose.Dispose();
+        }
+
+        void LateUpdate()
+        {
+            orgPose.GetHumanPose(ref hp);
+            vrmPose.SetHumanPose(ref hp);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
+    }
+
     [HarmonyPatch(typeof(OcPl))]
     [HarmonyPatch("charaChangeSteup")]
     static class OcPlVRM
     {
         static GameObject vrmModel;
-        public static GameObject modelMaster;
-        public static GameObject modelSlave;
 
         static void Postfix(OcPl __instance)
         {
@@ -421,37 +218,7 @@ namespace Player2VRM
                 }
             }
 
-            if (__instance is OcPlMaster)
-            {
-                if (modelMaster == null) modelMaster = GameObject.Instantiate<GameObject>(vrmModel);
-                var instAnim = __instance.GetComponentInChildren<Animator>();
-                var masterAnim = modelMaster.GetComponentInChildren<Animator>();
-                modelMaster.transform.SetParent(__instance.transform, false);
-                masterAnim.runtimeAnimatorController = instAnim.runtimeAnimatorController;
-
-                var fitter = __instance.GetComponent<AnimFitter>();
-                if (fitter == null)
-                {
-                    fitter = __instance.gameObject.AddComponent<AnimFitter>();
-                    fitter.masterAnim = masterAnim;
-                }
-            }
-
-            if (__instance is OcPlSlave)
-            {
-                if (modelSlave == null) modelSlave = GameObject.Instantiate<GameObject>(vrmModel);
-                var instAnim = __instance.GetComponentInChildren<Animator>();
-                var masterAnim = modelSlave.GetComponentInChildren<Animator>();
-                modelSlave.transform.SetParent(__instance.transform, false);
-                masterAnim.runtimeAnimatorController = instAnim.runtimeAnimatorController;
-
-                var fitter = __instance.GetComponent<AnimFitter>();
-                if (fitter == null)
-                {
-                    fitter = __instance.gameObject.AddComponent<AnimFitter>();
-                    fitter.masterAnim = masterAnim;
-                }
-            }
+            __instance.Animator.gameObject.GetOrAddComponent<CloneHumanoid>().Setup(vrmModel, __instance.Animator);
         }
 
         private static GameObject ImportVRM(string path)
@@ -472,7 +239,7 @@ namespace Player2VRM
             if (scaleStr != null && float.TryParse(scaleStr, out scale))
             {
                 context.Root.transform.localScale *= scale;
-            } 
+            }
 
             return context.Root;
         }
