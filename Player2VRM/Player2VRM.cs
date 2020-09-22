@@ -343,6 +343,7 @@ namespace Player2VRM
                 var assets = assetBundle.LoadAllAssets<Shader>();
                 foreach (var asset in assets)
                 {
+                    UnityEngine.Debug.Log("Add Shader: " + asset.name);
                     Shaders.Add(asset.name, asset);
                 }
             }
