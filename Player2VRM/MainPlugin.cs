@@ -14,7 +14,7 @@ namespace Player2VRM
     {
         public const string PluginGuid = "com.yoship1639.plugins.player2vrm";
         public const string PluginName = "Player2VRM";
-        public const string PluginVersion = "1.0.4.0";
+        public const string PluginVersion = "1.0.6.0";
 
         void Awake()
         {

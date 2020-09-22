@@ -50,5 +50,13 @@ namespace Player2VRM
             float.TryParse(str, out res);
             return res;
         }
+
+        public static bool ReadBool(string key, bool defaultValue = false)
+        {
+            var str = ReadSettings(key);
+            var res = defaultValue;
+            bool.TryParse(str, out res);
+            return res;
+        }
     }
 }

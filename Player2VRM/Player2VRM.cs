@@ -259,21 +259,27 @@ namespace Player2VRM
             //var MainColorFactor = Settings.ReadFloat("MainColorFactor")
             //__result.SetColor("_MainColor", new Color(MainColorFactor, MainColorFactor, MainColorFactor));
 
-            //if (x.pbrMetallicRoughness != null)
-            //{
-            //    if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 3)
-            //    {
-            //        float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
-            //        __result.SetColor("_MainColor", new Color(baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2]).gamma);
-            //    }
-            //    else if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 4)
-            //    {
-            //        float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
-            //        __result.SetColor("_MainColor", new Color(baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2], baseColorFactor2[3]).gamma);
-            //    }
-            //    //__result.SetFloat("_RefMetallic", x.pbrMetallicRoughness.metallicFactor);
-            //}
-            
+            if (x.pbrMetallicRoughness != null)
+            {
+                if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 3)
+                {
+                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
+                    var max = baseColorFactor2.Max();
+                    var rate = Mathf.Min(0.688f / max, 1.0f);
+                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0] * rate, baseColorFactor2[1] * rate, baseColorFactor2[2] * rate));
+                }
+                else if (x.pbrMetallicRoughness.baseColorFactor != null && x.pbrMetallicRoughness.baseColorFactor.Length == 4)
+                {
+                    float[] baseColorFactor2 = x.pbrMetallicRoughness.baseColorFactor;
+                    var facotrs = new float[] { baseColorFactor2[0], baseColorFactor2[1], baseColorFactor2[2] };
+                    var max = facotrs.Max();
+                    var rate = Mathf.Min(0.688f / max, 1.0f);
+                    __result.SetColor("_MainColor", new Color(baseColorFactor2[0] * rate, baseColorFactor2[1] * rate, baseColorFactor2[2] * rate, baseColorFactor2[3]));
+                }
+                //__result.SetFloat("_SelfLitIntensity", 1.0f);
+                //__result.SetFloat("_RefMetallic", x.pbrMetallicRoughness.metallicFactor);
+            }
+
 
             //if (x.normalTexture != null && x.normalTexture.index != -1)
             //{
@@ -290,26 +296,26 @@ namespace Player2VRM
             //}
         }
 
-        private static void SetTextureOffsetAndScale(Material material, glTFTextureInfo textureInfo, string propertyName)
-        {
-            if (textureInfo.extensions != null && textureInfo.extensions.KHR_texture_transform != null)
-            {
-                glTF_KHR_texture_transform khr_texture_transform = textureInfo.extensions.KHR_texture_transform;
-                Vector2 vector = new Vector2(0f, 0f);
-                Vector2 vector2 = new Vector2(1f, 1f);
-                if (khr_texture_transform.offset != null && khr_texture_transform.offset.Length == 2)
-                {
-                    vector = new Vector2(khr_texture_transform.offset[0], khr_texture_transform.offset[1]);
-                }
-                if (khr_texture_transform.scale != null && khr_texture_transform.scale.Length == 2)
-                {
-                    vector2 = new Vector2(khr_texture_transform.scale[0], khr_texture_transform.scale[1]);
-                }
-                vector.y = (vector.y + vector2.y - 1f) * -1f;
-                material.SetTextureOffset(propertyName, vector);
-                material.SetTextureScale(propertyName, vector2);
-            }
-        }
+        //private static void SetTextureOffsetAndScale(Material material, glTFTextureInfo textureInfo, string propertyName)
+        //{
+        //    if (textureInfo.extensions != null && textureInfo.extensions.KHR_texture_transform != null)
+        //    {
+        //        glTF_KHR_texture_transform khr_texture_transform = textureInfo.extensions.KHR_texture_transform;
+        //        Vector2 vector = new Vector2(0f, 0f);
+        //        Vector2 vector2 = new Vector2(1f, 1f);
+        //        if (khr_texture_transform.offset != null && khr_texture_transform.offset.Length == 2)
+        //        {
+        //            vector = new Vector2(khr_texture_transform.offset[0], khr_texture_transform.offset[1]);
+        //        }
+        //        if (khr_texture_transform.scale != null && khr_texture_transform.scale.Length == 2)
+        //        {
+        //            vector2 = new Vector2(khr_texture_transform.scale[0], khr_texture_transform.scale[1]);
+        //        }
+        //        vector.y = (vector.y + vector2.y - 1f) * -1f;
+        //        material.SetTextureOffset(propertyName, vector);
+        //        material.SetTextureScale(propertyName, vector2);
+        //    }
+        //}
     }
 
     [HarmonyPatch(typeof(OcPlEquip))]
@@ -341,6 +347,24 @@ namespace Player2VRM
             }
 
             return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(OcPlCharacterBuilder))]
+    [HarmonyPatch("ChangeHair")]
+    static class OcPlCharacterBuilderVRM
+    {
+        static void Postfix(OcPlCharacterBuilder __instance, GameObject prefab, int? layer = null)
+        {
+            var go = __instance.GetRefField<OcPlCharacterBuilder, GameObject>("hair");
+            foreach (var mr in go.GetComponentsInChildren<MeshRenderer>())
+            {
+                mr.enabled = false;
+            }
+            foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                smr.enabled = false;
+            }
         }
     }
 
@@ -412,9 +436,13 @@ namespace Player2VRM
                     return;
                 }
 
-                foreach (var smr in vrmModel.GetComponentsInChildren<SkinnedMeshRenderer>())
+                var receiveShadows = Settings.ReadBool("ReceiveShadows");
+                if (!receiveShadows)
                 {
-                    smr.receiveShadows = false;
+                    foreach (var smr in vrmModel.GetComponentsInChildren<SkinnedMeshRenderer>())
+                    {
+                        smr.receiveShadows = false;
+                    }
                 }
 
                 // プレイヤースケール調整
