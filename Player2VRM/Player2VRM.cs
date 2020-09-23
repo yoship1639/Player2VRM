@@ -52,6 +52,20 @@ namespace Player2VRM
         }
     }
 
+    [HarmonyPatch(typeof(OcAccessoryCtrl))]
+    [HarmonyPatch("setAf_DrawFlag")]
+    static class OcAccessoryCtrlVRM
+    {
+        static bool Prefix(OcAccessoryCtrl __instance, OcAccessoryCtrl.AccType type)
+        {
+            if (type == OcAccessoryCtrl.AccType.Quiver)
+            {
+                return Settings.ReadBool("DrawEquipArrow");
+            }
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(OcPlCharacterBuilder))]
     [HarmonyPatch("ChangeHair")]
     static class OcPlCharacterBuilderVRM
