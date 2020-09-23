@@ -256,13 +256,9 @@ namespace Player2VRM
 
                 // プレイヤースケール調整
                 {
-                    var scaleStr = Settings.ReadSettings("PlayerScale");
-                    var scale = 1.0f;
-                    if (scaleStr != null && float.TryParse(scaleStr, out scale))
-                    {
-                        __instance.transform.localScale *= scale;
-                        vrmModel.transform.localScale /= scale;
-                    }
+                    var scale = Settings.ReadFloat("PlayerScale", 1.0f);
+                    __instance.transform.localScale *= scale;
+                    vrmModel.transform.localScale /= scale;
                 }
             }
 
@@ -304,12 +300,7 @@ namespace Player2VRM
             catch { }
 
             // モデルスケール調整
-            var scaleStr = Settings.ReadSettings("ModelScale");
-            var scale = 1.0f;
-            if (scaleStr != null && float.TryParse(scaleStr, out scale))
-            {
-                context.Root.transform.localScale *= scale;
-            }
+            context.Root.transform.localScale *= Settings.ReadFloat("ModelScale", 1.0f);
 
             return context.Root;
         }
