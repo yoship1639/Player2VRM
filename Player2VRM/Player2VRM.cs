@@ -205,16 +205,12 @@ namespace Player2VRM
         {
             var proxy = vrmModel.GetComponent<VRMBlendShapeProxy>();
             var ovrInstance = LipSync.OVRLipSyncVRM.Instance;
-            UnityEngine.Debug.Log("AddSub");
             ovrInstance.OnBlend.Subscribe(v => ovrInstance.BlendFunc(v, proxy)).AddTo(vrmModel);
         }
 
         void PoseHandlerCreate(Animator org, Animator vrm)
         {
-            if (orgPose != null)
-                orgPose.Dispose();
-            if (vrmPose != null)
-                vrmPose.Dispose();
+            OnDestroy();
             orgPose = new HumanPoseHandler(org.avatar, org.transform);
             vrmPose = new HumanPoseHandler(vrm.avatar, vrm.transform);
         }
@@ -225,7 +221,6 @@ namespace Player2VRM
                 orgPose.Dispose();
             if (vrmPose != null)
                 vrmPose.Dispose();
-            UnityEngine.Debug.Log("remove");
         }
 
         void LateUpdate()
