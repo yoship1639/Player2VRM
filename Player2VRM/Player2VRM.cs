@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UniGLTF;
+using UniRx;
 using UnityEngine;
 using VRM;
 
@@ -95,7 +96,7 @@ namespace Player2VRM
                 __result = Shader.Find("RealToon/Version 5/Default/Default");
                 return false;
             }
-            
+
             return true;
         }
     }
@@ -166,13 +167,14 @@ namespace Player2VRM
         }
     }
 
+    [DefaultExecutionOrder(int.MaxValue - 100)]
     class CloneHumanoid : MonoBehaviour
     {
         HumanPoseHandler orgPose, vrmPose;
         HumanPose hp = new HumanPose();
         GameObject instancedModel;
 
-        public void Setup(GameObject vrmModel, Animator orgAnim)
+        public void Setup(GameObject vrmModel, Animator orgAnim, bool isMaster)
         {
             var instance = instancedModel ?? Instantiate(vrmModel);
             var useRealToon = Settings.ReadBool("UseRealToonShader", false);
@@ -187,14 +189,32 @@ namespace Player2VRM
                     }
                 }
             }
+
             instance.transform.SetParent(orgAnim.transform, false);
             PoseHandlerCreate(orgAnim, instance.GetComponent<Animator>());
-            instancedModel = instance;
+            if (instancedModel == null)
+            {
+                if (isMaster && LipSync.OVRLipSyncVRM.IsUseLipSync)
+                    AttachLipSync(instance);
+
+                instancedModel = instance;
+            }
+        }
+
+        void AttachLipSync(GameObject vrmModel)
+        {
+            var proxy = vrmModel.GetComponent<VRMBlendShapeProxy>();
+            var ovrInstance = LipSync.OVRLipSyncVRM.Instance;
+            UnityEngine.Debug.Log("AddSub");
+            ovrInstance.OnBlend.Subscribe(v => ovrInstance.BlendFunc(v, proxy)).AddTo(vrmModel);
         }
 
         void PoseHandlerCreate(Animator org, Animator vrm)
         {
-            OnDestroy();
+            if (orgPose != null)
+                orgPose.Dispose();
+            if (vrmPose != null)
+                vrmPose.Dispose();
             orgPose = new HumanPoseHandler(org.avatar, org.transform);
             vrmPose = new HumanPoseHandler(vrm.avatar, vrm.transform);
         }
@@ -205,14 +225,15 @@ namespace Player2VRM
                 orgPose.Dispose();
             if (vrmPose != null)
                 vrmPose.Dispose();
+            UnityEngine.Debug.Log("remove");
         }
 
         void LateUpdate()
         {
             orgPose.GetHumanPose(ref hp);
             vrmPose.SetHumanPose(ref hp);
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
+            instancedModel.transform.localPosition = Vector3.zero;
+            instancedModel.transform.localRotation = Quaternion.identity;
         }
     }
 
@@ -238,7 +259,7 @@ namespace Player2VRM
                 }
                 catch
                 {
-                    if(ModelStr != null)
+                    if (ModelStr != null)
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。settings.txt内のModelNameを確認してください。");
                     else
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
@@ -284,7 +305,7 @@ namespace Player2VRM
                 }
             }
 
-            __instance.Animator.gameObject.GetOrAddComponent<CloneHumanoid>().Setup(vrmModel, __instance.Animator);
+            __instance.Animator.gameObject.GetOrAddComponent<CloneHumanoid>().Setup(vrmModel, __instance.Animator, __instance is OcPlMaster);
         }
 
         private static GameObject ImportVRM(string path)
