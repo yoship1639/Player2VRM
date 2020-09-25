@@ -54,6 +54,7 @@ namespace Player2VRM.LipSync
             engine.AddComponent<AudioSource>();
             var micInput = engine.AddComponent<OVRLipSyncMicInput>();
             micInput.micIndex = micDeviceIndex;
+            micInput.enabled = false;
             engine.AddComponent<OVRLipSyncContext>().gain = micGain;
             Instance = engine.AddComponent<OVRLipSyncVRM>();
             Instance.micInput = micInput;
