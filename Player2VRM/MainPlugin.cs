@@ -21,6 +21,7 @@ namespace Player2VRM
             if (!Settings.ReadBool("Enabled", true)) return;
 
             if (!Settings.ReadBool("UseRealToonShader", false)) VRMShaders.Initialize();
+            LipSync.OVRLipSyncVRM.Setup(null);
 
             var harmony = new Harmony("com.yoship1639.plugins.player2vrm.patch");
             harmony.PatchAll();

@@ -67,6 +67,9 @@
     <Reference Include="UniHumanoid">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UniHumanoid.dll</HintPath>
     </Reference>
+    <Reference Include="UniRx">
+      <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UniRx.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.Timeline">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\Unity.Timeline.dll</HintPath>
     </Reference>
@@ -98,6 +101,11 @@
   <ItemGroup>
     <Compile Include="AccessUtils.cs" />
     <Compile Include="MainPlugin.cs" />
+    <Compile Include="OVRLipSync\OVRLipSync.cs" />
+    <Compile Include="OVRLipSync\OVRLipSyncContext.cs" />
+    <Compile Include="OVRLipSync\OVRLipSyncContextBase.cs" />
+    <Compile Include="OVRLipSync\OVRLipSyncVRM.cs" />
+    <Compile Include="OVRLipSync\OVRLipSyncMicInput.cs" />
     <Compile Include="Player2VRM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings.cs" />
