@@ -15,8 +15,15 @@ namespace Player2VRM
     [HarmonyPatch("Start")]
     static class OcPlHeadPrefabSettingVRM
     {
-        static void Postfix(OcPl __instance)
+        static void Postfix(OcPlHeadPrefabSetting __instance)
         {
+            var slave = __instance.GetComponentInParentRecursive<OcPlSlave>();
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+            }
+
             foreach (var mr in __instance.GetComponentsInChildren<MeshRenderer>())
             {
                 mr.enabled = false;
@@ -30,6 +37,13 @@ namespace Player2VRM
     {
         static bool Prefix(OcPlEquip __instance, ref bool isDraw)
         {
+            var slave = __instance.GetComponentInParentRecursive<OcPlSlave>();
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return true;
+            }
+
             if (__instance.EquipSlot == OcEquipSlot.EqHead && !Settings.ReadBool("DrawEquipHead", true))
             {
                 isDraw = false;
@@ -73,6 +87,14 @@ namespace Player2VRM
         static void Postfix(OcPlCharacterBuilder __instance, GameObject prefab, int? layer = null)
         {
             var go = __instance.GetRefField<OcPlCharacterBuilder, GameObject>("hair");
+
+            var slave = go.GetComponentInParentRecursive<OcPlSlave>();
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+            }
+
             foreach (var mr in go.GetComponentsInChildren<MeshRenderer>())
             {
                 mr.enabled = false;
@@ -224,6 +246,13 @@ namespace Player2VRM
 
         static void Postfix(OcPl __instance)
         {
+            var slave = __instance as OcPlSlave;
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+            }
+
             if (vrmModel == null)
             {
                 //カスタムモデル名の取得(設定ファイルにないためLogの出力が不自然にならないよう調整)
