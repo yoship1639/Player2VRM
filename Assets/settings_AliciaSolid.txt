@@ -1,0 +1,87 @@
+// このMODを使用するか true:使用する false:使用しない
+Enabled=true
+
+// モデルスケール、1.2～1.4が良いかも
+ModelScale=1.2
+
+// プレイヤースケール、剣とか盾が上過ぎるのを逆に低くする
+PlayerScale=1.0
+
+// 頭装備を描画するかどうか true:描画 false:描画しない
+DrawEquipHead=true
+
+// アクセサリーを描画するかどうか true:描画 false:描画しない
+DrawEquipAccessory=true
+
+// 盾（サブ武器）を描画するかどうか true:描画 false:描画しない
+DrawEquipShield=true
+
+// 矢を描画するかどうか true:描画 false:描画しない
+DrawEquipArrow=true
+
+// カスタムモデル名　xxx.vrmであれば xxxを入力
+ModelName=AliciaSolid
+
+// 影の影響を受けるか、リアル指向の方向け true:受ける false:受けない
+ReceiveShadows=false
+
+// クラフトピアシェーダを使うか　true:使う false:使わない
+UseRealToonShader=false
+
+///// 各装備品の位置調整 /////
+// 装備品位置の調整内容をリアルタイムに反映するか
+// true:  リアルタイムで反映する。設定ファイル保存のタイミングで位置が動的に変わる。ただし、常にファイルを読み込むので負荷が大きい。位置調整作業向け。
+// false: 一度読み込んだ値を使い続ける。ゲーム再起動まで値の変更が反映されないが、負荷が小さい。通常プレイ時向け。
+DynamicEquipAdjustment=false
+
+// 頭装備の位置をVRMモデルに追従させるかどうか
+// true:VRMモデルのHeadボーンに追従 false:クラフトピア標準位置
+EquipHeadFollowsModel=true
+// 頭装備の表示位置のオフセット
+EquipHeadOffset=(0.0, 0.13, -0.05)
+
+// アクセサリーの位置をVRMモデルに追従させるかどうか
+// true:VRMモデルのHipsボーンに追従 false:クラフトピア標準位置
+EquipAccessoryFollowsModel=true
+// アクセサリーの表示位置のオフセット
+EquipAccessoryOffset=(0.0, 0.0, -0.1)
+
+// グライダーの位置をVRMモデルに追従させるかどうか
+// true:VRMモデルのHipsボーンに追従 false:クラフトピア標準位置
+// コメント：クラフトピア標準位置のままで問題なく、VRMモデルのHipボーンに追従させる意味はあまりなさそう
+EquipFlightUnitFollowsModel=false
+// グライダーの表示位置のオフセット
+EquipFlightUnitOffset=(0.0,0.1,0.0)
+
+
+/// 以下の装備品の位置調整は、何かしらの不具合があるor検証不十分のため注意 ///
+
+// 矢筒の位置をVRMモデルに追従させるかどうか
+// true:VRMモデルのSpineボーンに追従 false:クラフトピア標準位置
+// 既知の不具合：起動時にtrueになっていると矢筒が表示されなくなる。（常時falseが無難）
+EquipArrowFollowsModel=false
+// 矢筒の表示位置のオフセット
+EquipArrowOffset=(0.05, 0.05, -0.1)
+
+// 盾（サブ武器）、種、モンスターボールなど、右手装備アイテムの位置をVRMモデルに追従させるかどうか
+// true:VRMモデルのRightHandボーンに追従 false:クラフトピア標準位置
+// 既知の不具合：trueにすると盾を装備した場合に背中に背負わなくなる
+EquipSubFollowsModel=false
+// 右手装備アイテムの表示位置のオフセット
+EquipSubOffset=(0.0, 0.0, 0.0)
+
+// 片手武器（ピッケル、斧は含まない）をVRMモデルに追従させるかどうか
+// true:VRMモデルのSpineボーンに追従 false:クラフトピア標準位置
+// 既知の不具合：trueにすると攻撃モーション中も背中のまま移動しない（向きだけ変わる）
+EquipDualFollowsModel=false
+// 片手武器アイテムの表示位置のオフセット
+EquipDualOffset=(0.0, -0.1, 0.0)
+
+// 両手武器をVRMモデルに追従させるかどうか
+// true:VRMモデルのSpineボーンに追従 false:クラフトピア標準位置
+// 既知の不具合：trueにすると攻撃モーション中も背中のまま移動しない（向きだけ変わる）。弓を構えたとき、弓の位置は変わるけど、矢の位置は変わらない。
+EquipTwoHandFollowsModel=false
+// 両手武器アイテムの表示位置のオフセット
+EquipTwoHandOffset=(0.0, -0.1, -0.0)
+
+/// ピッケル・斧・壁設置時などの左手に出てくる本は、現状未対応 ///

@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Oc;
+using SR;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +9,7 @@ using System.Reflection;
 using UniGLTF;
 using UnityEngine;
 using VRM;
+using Oc.Item;
 
 namespace Player2VRM
 {
@@ -23,6 +25,230 @@ namespace Player2VRM
             }
         }
     }
+
+
+    [HarmonyPatch(typeof(OcPl))]
+    [HarmonyPatch(nameof(OcPl.lateMove))]
+    static class EquipAdjustPos_OcPlEquipCtrl_lateMove
+    {
+        // OcPlEquipCtrlに紐づくOcPlEquipのリスト
+        static readonly Dictionary<OcPlEquipCtrl, HashSet<OcPlEquip>> plEquipCtrlCorrespondedplEquips = new Dictionary<OcPlEquipCtrl, HashSet<OcPlEquip>>();
+
+        // OcEquipSlot別の、VRMモデルのどのボーンを親にするかの設定
+        static readonly IReadOnlyDictionary<OcEquipSlot, HumanBodyBones> epuipBaseBones = new Dictionary<OcEquipSlot, HumanBodyBones>
+        {
+            {OcEquipSlot.EqHead, HumanBodyBones.Head},
+            {OcEquipSlot.Accessory, HumanBodyBones.Hips},
+            {OcEquipSlot.FlightUnit, HumanBodyBones.Hips},
+            {OcEquipSlot.WpSub, HumanBodyBones.RightHand},
+            {OcEquipSlot.WpDual, HumanBodyBones.Spine},
+            {OcEquipSlot.WpTwoHand, HumanBodyBones.Spine},
+            {OcEquipSlot.Ammo, HumanBodyBones.Hips},
+            {OcEquipSlot.EqBody, HumanBodyBones.Hips},
+            {OcEquipSlot.WpMain, HumanBodyBones.Spine},
+        };
+
+        // OcEquipSlot別の設定ファイルのKey名
+        static readonly IReadOnlyDictionary<OcEquipSlot, string> equipSlot2Key = new Dictionary<OcEquipSlot, string>
+        {
+            { OcEquipSlot.EqHead, "EquipHead" },
+            { OcEquipSlot.Accessory, "EquipAccessory" },
+            { OcEquipSlot.FlightUnit, "EquipFlightUnit" },
+            { OcEquipSlot.WpSub, "EquipSub" },
+            { OcEquipSlot.WpDual, "EquipDual" },
+            { OcEquipSlot.WpTwoHand, "EquipTwoHand" },
+            { OcEquipSlot.Ammo, "EquipAmmo" }, // これの位置を変えると何に影響があるのか不明
+            { OcEquipSlot.EqBody, "EquipBody" }, // これの位置を変えると何に影響があるのか不明
+            { OcEquipSlot.WpMain, "EquipMain" }, // これの位置を変えると、ピッケル・斧の所持位置と、壁などの設置場所（！！）が変わる。
+        };
+
+        // 装備位置変更設定をキャッシュするか（毎フレームパースするのは無駄）
+        static bool? cachingEnabled = null;
+        static bool CachingEnabled
+        {
+            get
+            {
+                if (cachingEnabled.HasValue && cachingEnabled.Value == true) return true;
+                cachingEnabled = !Settings.ReadBool("DynamicEquipAdjustment", false);
+                return cachingEnabled.Value;
+            }
+        }
+
+        // 装備位置変更設定のキャッシュ（VRMモデルに合わせるかどうか、オフセット値）
+        static readonly Dictionary<OcEquipSlot, bool> equipPositionIsAdujstedToVrmModel = new Dictionary<OcEquipSlot, bool>();
+        static readonly Dictionary<OcEquipSlot, Vector3> equipPositionOffsets = new Dictionary<OcEquipSlot, Vector3>();
+        // 装備の本来の親Transform
+        static readonly Dictionary<OcPlEquipCtrl, Transform> originalParentTransform = new Dictionary<OcPlEquipCtrl, Transform>();
+
+        // VRMモデルのアニメータのキャッシュ（念の為OcPl別にキャッシュ）
+        static readonly Dictionary<OcPl, Animator> plRelatedModelAnimator = new Dictionary<OcPl, Animator>();
+
+        // 装備品一覧の取得
+        internal static HashSet<OcPlEquip> GetPlEquips(OcPlEquipCtrl plEquipCtrl)
+        {
+            if(plEquipCtrlCorrespondedplEquips.TryGetValue(plEquipCtrl, out var plEquips))
+            {
+                return plEquips;
+            }
+            else
+            {
+                // OcPlEquipCtrlがDestoryされるタイミングがわからないので、新規追加のタイミングでDictionary中のOcPlEquipCtrlの存在チェックを実施する
+                foreach(var destroyedPlEquipCtrl in plEquipCtrlCorrespondedplEquips.Keys.Where(key => key == null).ToArray())
+                {
+                   plEquipCtrlCorrespondedplEquips.Remove(destroyedPlEquipCtrl);
+                }
+                foreach (var destroyedPlEquipCtrl in originalParentTransform.Keys.Where(key => key == null).ToArray())
+                {
+                    originalParentTransform.Remove(destroyedPlEquipCtrl);
+                }
+                
+                var newPlEquips = new HashSet<OcPlEquip>();
+                plEquipCtrlCorrespondedplEquips.Add(plEquipCtrl, newPlEquips);
+                return newPlEquips;
+            }
+        }
+
+        static Vector3 GetOffset(OcEquipSlot equipSlot)
+        {
+            Vector3 offset;
+            if(equipPositionOffsets.TryGetValue(equipSlot, out offset) && CachingEnabled)
+            {
+                return offset;
+            }
+
+            offset = Settings.ReadVector3($"{equipSlot2Key[equipSlot]}Offset", Vector3.zero);
+            if (CachingEnabled) equipPositionOffsets.Add(equipSlot, offset);
+            return offset;
+
+        }
+        static bool IsAdujstedToVrmModel(OcEquipSlot equipSlot)
+        {
+            bool result;
+            if(equipPositionIsAdujstedToVrmModel.TryGetValue(equipSlot, out result) && CachingEnabled)
+            {
+                return result;
+            }
+
+            result = Settings.ReadBool($"{equipSlot2Key[equipSlot]}FollowsModel", false);
+            if(CachingEnabled) equipPositionIsAdujstedToVrmModel.Add(equipSlot, result);
+            return result;
+        }
+
+        static Animator GetPlRelatedModelAnimator(OcPl pl)
+        {
+            if (plRelatedModelAnimator.TryGetValue(pl, out var anim) == false || anim == null) // Dictionaryにキャッシュされて無いorデストロイ済み
+            {
+                anim = pl
+                    .Animator.gameObject
+                    .GetComponent<CloneHumanoid>()
+                    .GetVrmModel()
+                    .GetComponent<Animator>();
+                plRelatedModelAnimator[pl] = anim; // インデクサでのアクセスならkeyの存在有無にかかわらず追加・更新できる
+            }
+            return anim;
+        }
+
+        static void AdjustEquipPos(OcPlEquip plEquip)
+        {
+            if (IsAdujstedToVrmModel(plEquip.EquipSlot) && epuipBaseBones.TryGetValue(plEquip.EquipSlot, out var bone))
+            {
+                var modelHeadTrans = GetPlRelatedModelAnimator(plEquip.OwnerPl).GetBoneTransform(bone);
+                plEquip.transform.SetParent(modelHeadTrans, false);
+                plEquip.SetLocalPosition(GetOffset(plEquip.EquipSlot));
+                return;
+            }
+            else
+            {
+                plEquip.TransSelf.SetParent(originalParentTransform[plEquip.OwnerPl.EquipCtrl], true);
+                plEquip.TransSelf.localPosition += GetOffset(plEquip.EquipSlot);
+            }
+        }
+
+        // 矢筒は他の装備品と管理方法が違うので別途対応（やってることはほぼ同じ）
+        static readonly Dictionary<OcPlCommon, Transform> quiverTransforms = new Dictionary<OcPlCommon, Transform>();
+        static Vector3? quiverOffset = null;
+        static bool? isQuiverAdujstedToVrmModel = null;
+
+        static Vector3 GetQuiverOffset()
+        {
+            if (quiverOffset.HasValue && EquipAdjustPos_OcPlEquipCtrl_lateMove.CachingEnabled) return quiverOffset.Value;
+            quiverOffset = Settings.ReadVector3("EquipArrowOffset", Vector3.zero);
+            return quiverOffset.Value;
+        }
+
+        static bool IsQuiverAdujstedToVrmModel()
+        {
+            if (isQuiverAdujstedToVrmModel.HasValue && EquipAdjustPos_OcPlEquipCtrl_lateMove.CachingEnabled) return isQuiverAdujstedToVrmModel.Value;
+            isQuiverAdujstedToVrmModel = Settings.ReadBool("EquipArrowFollowsModel", false);
+            return isQuiverAdujstedToVrmModel.Value;
+        }
+
+        static void AdjustEquipPos(OcPl pl, OcPlCommon plCommon)
+        {
+            Transform quiver;
+            if (quiverTransforms.TryGetValue(plCommon, out quiver) == false || quiver == null)
+            {
+                quiver = plCommon.AccessoryCtrl.transform.Find("OcQuiver");
+                if (quiver != null) quiverTransforms.Add(plCommon, quiver);
+            }
+
+            if (quiver == null) return;
+
+            if (IsQuiverAdujstedToVrmModel())
+            {
+                var modelHeadTrans = GetPlRelatedModelAnimator(pl).GetBoneTransform(HumanBodyBones.Spine);
+                quiver.SetParent(modelHeadTrans, false);
+                quiver.SetLocalPosition(GetQuiverOffset());
+                return;
+            }
+            else
+            {
+                quiver.SetParent(plCommon.AccessoryCtrl, true);
+                quiver.localPosition += GetQuiverOffset();
+            }
+
+        }
+
+        static void Postfix(OcPl __instance)
+        {
+            var plEquipCtrl = __instance.EquipCtrl;
+            var plCommon = __instance.PlCommon;
+            var plEquips = GetPlEquips(plEquipCtrl);
+            plEquips.RemoveWhere(plEquip => plEquip == null); // Destroyされていたら null チェックが True になる
+
+            if (originalParentTransform.ContainsKey(plEquipCtrl) == false && plEquips.Any())
+            {
+                originalParentTransform.Add(plEquipCtrl, IEnumerableExtensions.First(plEquips).transform.parent);
+            }
+
+            foreach (var plEquip in plEquips)
+            {
+                AdjustEquipPos(plEquip);
+            }
+
+            AdjustEquipPos(__instance, __instance.PlCommon);
+        }
+    }
+
+
+    [HarmonyPatch(typeof(OcPlEquipCtrl))]
+    [HarmonyPatch(nameof(OcPlEquipCtrl.setEquip))]
+    static class EquipAdjustPos_OcPlEquipCtrl_setEquip
+    {
+        static bool Prefix(OcPlEquipCtrl __instance, OcItem item, OcEquipSlot equipSlot, out OcEquipSlot __state)
+        {
+            __state = equipSlot;
+            return true;
+        }
+
+        // 装備変更のタイミングで装備品リストを更新（追加）
+        static void Postfix(OcPlEquipCtrl __instance, OcEquipSlot __state)
+        {
+            EquipAdjustPos_OcPlEquipCtrl_lateMove.GetPlEquips(__instance).Add(__instance.getEquip(__state));
+        }
+
+    }
+
 
     [HarmonyPatch(typeof(OcPlEquip))]
     [HarmonyPatch("setDraw")]
@@ -166,11 +392,12 @@ namespace Player2VRM
         }
     }
 
-    class CloneHumanoid : MonoBehaviour
+    internal class CloneHumanoid : MonoBehaviour
     {
         HumanPoseHandler orgPose, vrmPose;
         HumanPose hp = new HumanPose();
         GameObject instancedModel;
+        internal GameObject GetVrmModel() => instancedModel;
 
         public void Setup(GameObject vrmModel, Animator orgAnim)
         {
