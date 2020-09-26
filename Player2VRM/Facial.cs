@@ -10,7 +10,7 @@ namespace Player2VRM.Facial
         // まばたき
         public static float blinkTime = 0.2f;      // まばたき時間
         public static float blinkInterval = 3f;    // 乱数による最大瞬き間隔
-        public static float faceTweenTime = 0.05f; // 表情遷移時間
+        public static float faceTweenTime = 0.2f; // 表情遷移時間
 
         // 表情キーアサイン (Alt+)
         public static KeyCode keyFun = KeyCode.H;
@@ -97,10 +97,44 @@ namespace Player2VRM.Facial
         }
     }
 
+    internal class ShapeWeight
+    {
+        public BlendShapeKey ShapeKey { get; private set; }
+        public float Weight { get; private set; }
+
+        float targetWeight;
+        float animTime;
+
+        public ShapeWeight(BlendShapePreset prisetKey)
+        {
+            ShapeKey = BlendShapeKey.CreateFromPreset(prisetKey);
+        }
+
+        public void Enable(bool enabled)
+        {
+            animTime = Config.faceTweenTime;
+            targetWeight = enabled ? 1 : 0;
+        }
+
+        public void Update(float dltTime)
+        {
+            if (animTime > 0)
+            {
+                animTime -= dltTime;
+                if (animTime < 0)
+                    animTime = 0;
+                Weight = Mathf.Lerp(targetWeight, Weight, animTime / Config.faceTweenTime);
+            }
+        }
+    }
+
+
     class FaceCtrl : MonoBehaviour
     {
         VRMBlendShapeProxy blendProxy;
         EyeCtrl facialEye;
+        FaceType currentFace;
+
         readonly ShapeWeight[] shapeWeights = new ShapeWeight[] {
             new ShapeWeight(BlendShapePreset.Joy),
             new ShapeWeight(BlendShapePreset.Angry),
@@ -110,8 +144,14 @@ namespace Player2VRM.Facial
 
         public void SetEmote(FaceType emote)
         {
-            for (int i = 0; i < shapeWeights.Length; ++i)
-                shapeWeights[i].Enable((i + 1) == (int)emote);
+            if (currentFace == emote)
+                return;
+
+            if (currentFace != FaceType.Neutral)
+                shapeWeights[(int)currentFace - 1].Enable(false);
+            if( emote != FaceType.Neutral)
+                shapeWeights[(int)emote - 1].Enable(true);
+            currentFace = emote;
         }
 
         void Start()
@@ -120,39 +160,6 @@ namespace Player2VRM.Facial
             facialEye = GetComponent<EyeCtrl>();
             if (blendProxy == null)
                 enabled = false;
-        }
-
-        internal class ShapeWeight
-        {
-            public BlendShapeKey ShapeKey { get; private set; }
-            public bool IsDisableBlink { get; private set; }
-            public float Weight { get; private set; }
-
-            float targetWeight;
-            float animTime;
-
-            public ShapeWeight(BlendShapePreset prisetKey, bool disableBlink = false)
-            {
-                ShapeKey = BlendShapeKey.CreateFromPreset(prisetKey);
-                IsDisableBlink = disableBlink;
-            }
-
-            public void Enable(bool enabled)
-            {
-                animTime = Config.faceTweenTime;
-                targetWeight = enabled ? 1 : 0;
-            }
-
-            public void Update(float dltTime)
-            {
-                if (animTime > 0)
-                {
-                    animTime -= dltTime;
-                    if (animTime < 0)
-                        animTime = 0;
-                    Weight = Mathf.Lerp(targetWeight, Weight, animTime / Config.faceTweenTime);
-                }
-            }
         }
 
         void Update()
