@@ -195,6 +195,8 @@ namespace Player2VRM
         HumanPoseHandler orgPose, vrmPose;
         HumanPose hp = new HumanPose();
         GameObject instancedModel;
+        VRMBlendShapeProxy blendProxy;
+        Facial.FaceCtrl facialFace;
 
         public void Setup(GameObject vrmModel, Animator orgAnim, bool isMaster)
         {
@@ -216,18 +218,21 @@ namespace Player2VRM
             PoseHandlerCreate(orgAnim, instance.GetComponent<Animator>());
             if (instancedModel == null)
             {
+                blendProxy = instance.GetOrAddComponent<VRMBlendShapeProxy>();
                 if (isMaster && LipSync.OVRLipSyncVRM.IsUseLipSync)
                     AttachLipSync(instance);
 
+                instance.GetOrAddComponent<Facial.EyeCtrl>();
+                if (isMaster)
+                    facialFace = instance.GetOrAddComponent<Facial.FaceCtrl>();
                 instancedModel = instance;
             }
         }
 
         void AttachLipSync(GameObject vrmModel)
         {
-            var proxy = vrmModel.GetComponent<VRMBlendShapeProxy>();
             var ovrInstance = LipSync.OVRLipSyncVRM.Instance;
-            ovrInstance.OnBlend.Subscribe(v => ovrInstance.BlendFunc(v, proxy)).AddTo(vrmModel);
+            ovrInstance.OnBlend.Subscribe(v => ovrInstance.BlendFunc(v, blendProxy)).AddTo(vrmModel);
         }
 
         void PoseHandlerCreate(Animator org, Animator vrm)
@@ -251,6 +256,8 @@ namespace Player2VRM
             vrmPose.SetHumanPose(ref hp);
             instancedModel.transform.localPosition = Vector3.zero;
             instancedModel.transform.localRotation = Quaternion.identity;
+            if (blendProxy)
+                blendProxy.Apply();
         }
     }
 

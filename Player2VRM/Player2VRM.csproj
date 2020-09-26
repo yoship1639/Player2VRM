@@ -88,6 +88,10 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\\steamapps\common\Craftopia\Craftopia_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
@@ -100,6 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessUtils.cs" />
+    <Compile Include="Facial.cs" />
     <Compile Include="MainPlugin.cs" />
     <Compile Include="OVRLipSync\OVRLipSync.cs" />
     <Compile Include="OVRLipSync\OVRLipSyncContext.cs" />
