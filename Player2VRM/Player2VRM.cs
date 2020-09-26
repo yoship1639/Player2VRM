@@ -218,7 +218,7 @@ namespace Player2VRM
             PoseHandlerCreate(orgAnim, instance.GetComponent<Animator>());
             if (instancedModel == null)
             {
-                blendProxy = instance.GetOrAddComponent<VRMBlendShapeProxy>();
+                blendProxy = instance.GetComponent<VRMBlendShapeProxy>();
                 if (isMaster && LipSync.OVRLipSyncVRM.IsUseLipSync)
                     AttachLipSync(instance);
 

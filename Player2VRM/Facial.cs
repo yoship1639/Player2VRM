@@ -19,6 +19,15 @@ namespace Player2VRM.Facial
         public static KeyCode keyAngry = KeyCode.L;
     }
 
+    public enum FaceType
+    {
+        Neutral,
+        Joy,
+        Angry,
+        Sorrow,
+        Fun,
+    }
+
     class EyeCtrl : MonoBehaviour
     {
         VRMBlendShapeProxy blendProxy;
@@ -149,8 +158,15 @@ namespace Player2VRM.Facial
 
             if (currentFace != FaceType.Neutral)
                 shapeWeights[(int)currentFace - 1].Enable(false);
-            if( emote != FaceType.Neutral)
+            bool isEyeBlinkEnable = false;
+            if (emote != FaceType.Neutral)
                 shapeWeights[(int)emote - 1].Enable(true);
+            else
+                isEyeBlinkEnable = true;
+
+            if (facialEye)
+                facialEye.BlinkEnabled = isEyeBlinkEnable;
+
             currentFace = emote;
         }
 
@@ -184,27 +200,12 @@ namespace Player2VRM.Facial
             }
 
             var dlt = Time.deltaTime;
-            var weightTotal = 0f;
             foreach (var shape in shapeWeights)
             {
                 shape.Update(dlt);
-                var weight = shape.Weight;
-                weightTotal += weight;
-                blendProxy.AccumulateValue(shape.ShapeKey, weight);
+                blendProxy.AccumulateValue(shape.ShapeKey, shape.Weight);
             }
-
-            if (facialEye)
-                facialEye.BlinkEnabled = weightTotal < float.Epsilon;
         }
-    }
-
-    public enum FaceType
-    {
-        Neutral,
-        Joy,
-        Angry,
-        Sorrow,
-        Fun,
     }
 }
 
