@@ -14,13 +14,14 @@ namespace Player2VRM
     {
         public const string PluginGuid = "com.yoship1639.plugins.player2vrm";
         public const string PluginName = "Player2VRM";
-        public const string PluginVersion = "1.1.2.0";
+        public const string PluginVersion = "1.2.0.0";
 
         void Awake()
         {
             if (!Settings.ReadBool("Enabled", true)) return;
 
             if (!Settings.ReadBool("UseRealToonShader", false)) VRMShaders.Initialize();
+            LipSync.OVRLipSyncVRM.Setup(null);
 
             var harmony = new Harmony("com.yoship1639.plugins.player2vrm.patch");
             harmony.PatchAll();

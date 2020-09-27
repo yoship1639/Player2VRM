@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UniGLTF;
+using UniRx;
 using UnityEngine;
 using VRM;
 using Oc.Item;
@@ -17,8 +18,15 @@ namespace Player2VRM
     [HarmonyPatch("Start")]
     static class OcPlHeadPrefabSettingVRM
     {
-        static void Postfix(OcPl __instance)
+        static void Postfix(OcPlHeadPrefabSetting __instance)
         {
+            var slave = __instance.GetComponentInParentRecursive<OcPlSlave>();
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+            }
+
             foreach (var mr in __instance.GetComponentsInChildren<MeshRenderer>())
             {
                 mr.enabled = false;
@@ -256,6 +264,13 @@ namespace Player2VRM
     {
         static bool Prefix(OcPlEquip __instance, ref bool isDraw)
         {
+            var slave = __instance.GetComponentInParentRecursive<OcPlSlave>();
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return true;
+            }
+
             if (__instance.EquipSlot == OcEquipSlot.EqHead && !Settings.ReadBool("DrawEquipHead", true))
             {
                 isDraw = false;
@@ -299,6 +314,14 @@ namespace Player2VRM
         static void Postfix(OcPlCharacterBuilder __instance, GameObject prefab, int? layer = null)
         {
             var go = __instance.GetRefField<OcPlCharacterBuilder, GameObject>("hair");
+
+            var slave = go.GetComponentInParentRecursive<OcPlSlave>();
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+            }
+
             foreach (var mr in go.GetComponentsInChildren<MeshRenderer>())
             {
                 mr.enabled = false;
@@ -321,7 +344,7 @@ namespace Player2VRM
                 __result = Shader.Find("RealToon/Version 5/Default/Default");
                 return false;
             }
-            
+
             return true;
         }
     }
@@ -392,14 +415,17 @@ namespace Player2VRM
         }
     }
 
+    [DefaultExecutionOrder(int.MaxValue - 100)]
     internal class CloneHumanoid : MonoBehaviour
     {
         HumanPoseHandler orgPose, vrmPose;
         HumanPose hp = new HumanPose();
         GameObject instancedModel;
         internal GameObject GetVrmModel() => instancedModel;
+        VRMBlendShapeProxy blendProxy;
+        Facial.FaceCtrl facialFace;
 
-        public void Setup(GameObject vrmModel, Animator orgAnim)
+        public void Setup(GameObject vrmModel, Animator orgAnim, bool isMaster)
         {
             var instance = instancedModel ?? Instantiate(vrmModel);
             var useRealToon = Settings.ReadBool("UseRealToonShader", false);
@@ -414,9 +440,27 @@ namespace Player2VRM
                     }
                 }
             }
+
             instance.transform.SetParent(orgAnim.transform, false);
             PoseHandlerCreate(orgAnim, instance.GetComponent<Animator>());
-            instancedModel = instance;
+            if (instancedModel == null)
+            {
+                blendProxy = instance.GetComponent<VRMBlendShapeProxy>();
+                if (isMaster && LipSync.OVRLipSyncVRM.IsUseLipSync)
+                    AttachLipSync(instance);
+
+                instance.GetOrAddComponent<Facial.EyeCtrl>();
+                var useFacial = Settings.ReadBool("UseFacial", true);
+                if (isMaster && useFacial)
+                    facialFace = instance.GetOrAddComponent<Facial.FaceCtrl>();
+                instancedModel = instance;
+            }
+        }
+
+        void AttachLipSync(GameObject vrmModel)
+        {
+            var ovrInstance = LipSync.OVRLipSyncVRM.Instance;
+            ovrInstance.OnBlend.Subscribe(v => ovrInstance.BlendFunc(v, blendProxy)).AddTo(vrmModel);
         }
 
         void PoseHandlerCreate(Animator org, Animator vrm)
@@ -438,8 +482,10 @@ namespace Player2VRM
         {
             orgPose.GetHumanPose(ref hp);
             vrmPose.SetHumanPose(ref hp);
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
+            instancedModel.transform.localPosition = Vector3.zero;
+            instancedModel.transform.localRotation = Quaternion.identity;
+            if (blendProxy)
+                blendProxy.Apply();
         }
     }
 
@@ -451,6 +497,13 @@ namespace Player2VRM
 
         static void Postfix(OcPl __instance)
         {
+            var slave = __instance as OcPlSlave;
+            if (slave && !slave.FindNameInParentRecursive("UI"))
+            {
+                var selfId = OcNetMng.Inst.NetPlId_Master;
+                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+            }
+
             if (vrmModel == null)
             {
                 //カスタムモデル名の取得(設定ファイルにないためLogの出力が不自然にならないよう調整)
@@ -465,7 +518,7 @@ namespace Player2VRM
                 }
                 catch
                 {
-                    if(ModelStr != null)
+                    if (ModelStr != null)
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。settings.txt内のModelNameを確認してください。");
                     else
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
@@ -511,7 +564,7 @@ namespace Player2VRM
                 }
             }
 
-            __instance.Animator.gameObject.GetOrAddComponent<CloneHumanoid>().Setup(vrmModel, __instance.Animator);
+            __instance.Animator.gameObject.GetOrAddComponent<CloneHumanoid>().Setup(vrmModel, __instance.Animator, __instance is OcPlMaster);
         }
 
         private static GameObject ImportVRM(string path)
