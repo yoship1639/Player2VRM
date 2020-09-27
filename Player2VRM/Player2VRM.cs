@@ -223,7 +223,8 @@ namespace Player2VRM
                     AttachLipSync(instance);
 
                 instance.GetOrAddComponent<Facial.EyeCtrl>();
-                if (isMaster)
+                var useFacial = Settings.ReadBool("UseFacial", true);
+                if (isMaster && useFacial)
                     facialFace = instance.GetOrAddComponent<Facial.FaceCtrl>();
                 instancedModel = instance;
             }
