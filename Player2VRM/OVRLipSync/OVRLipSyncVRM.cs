@@ -93,7 +93,6 @@ namespace Player2VRM.LipSync
         public void BlendFunc(OVRLipSync.Frame frame, VRMBlendShapeProxy vrmBlendShapeProxy)
         {
             onBlendShape(frame, vrmBlendShapeProxy);
-            vrmBlendShapeProxy.Apply();
         }
 
         static void OnDefaultBlend(OVRLipSync.Frame frame, VRMBlendShapeProxy vrmBlendShapeProxy)
