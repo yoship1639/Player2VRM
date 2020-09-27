@@ -47,13 +47,15 @@ namespace Player2VRM
         {
             {OcEquipSlot.EqHead, HumanBodyBones.Head},
             {OcEquipSlot.Accessory, HumanBodyBones.Hips},
-            {OcEquipSlot.FlightUnit, HumanBodyBones.Hips},
-            {OcEquipSlot.WpSub, HumanBodyBones.RightHand},
-            {OcEquipSlot.WpDual, HumanBodyBones.Spine},
-            {OcEquipSlot.WpTwoHand, HumanBodyBones.Spine},
-            {OcEquipSlot.Ammo, HumanBodyBones.Hips},
-            {OcEquipSlot.EqBody, HumanBodyBones.Hips},
-            {OcEquipSlot.WpMain, HumanBodyBones.Spine},
+            //{OcEquipSlot.FlightUnit, HumanBodyBones.Hips}, // グライダー中は姿勢が固定なのでモデル追従にする意味がない
+
+            // 頭装備とアクセサリ以外は不具合があるため、VRMモデル追従の設定ができないようにしておく
+            //{OcEquipSlot.WpSub, HumanBodyBones.RightHand}, // 追従設定すると盾を装備した場合に背中に背負わなくなる
+            //{OcEquipSlot.WpDual, HumanBodyBones.Spine},  // 追従設定すると攻撃モーション中も背中のまま移動しない（向きだけ変わる）
+            //{OcEquipSlot.WpTwoHand, HumanBodyBones.Spine}, // 追従設定すると攻撃モーション中も背中のまま移動しない（向きだけ変わる）。弓を構えたとき、弓の位置は変わるけど、矢の位置は変わらない。
+            //{OcEquipSlot.Ammo, HumanBodyBones.Hips}, 
+            //{OcEquipSlot.EqBody, HumanBodyBones.Hips},
+            //{OcEquipSlot.WpMain, HumanBodyBones.Spine},
         };
 
         // OcEquipSlot別の設定ファイルのKey名
@@ -65,22 +67,14 @@ namespace Player2VRM
             { OcEquipSlot.WpSub, "EquipSub" },
             { OcEquipSlot.WpDual, "EquipDual" },
             { OcEquipSlot.WpTwoHand, "EquipTwoHand" },
-            { OcEquipSlot.Ammo, "EquipAmmo" }, // これの位置を変えると何に影響があるのか不明
-            { OcEquipSlot.EqBody, "EquipBody" }, // これの位置を変えると何に影響があるのか不明
-            { OcEquipSlot.WpMain, "EquipMain" }, // これの位置を変えると、ピッケル・斧の所持位置と、壁などの設置場所（！！）が変わる。
+            // 以下は用途不明or不具合があるので読み込まないようにしておく
+            //{ OcEquipSlot.Ammo, "EquipAmmo" }, // これの位置を変えると何に影響があるのか不明
+            //{ OcEquipSlot.EqBody, "EquipBody" }, // これの位置を変えると何に影響があるのか不明
+            //{ OcEquipSlot.WpMain, "EquipMain" }, // これの位置を変えると、ピッケル・斧の所持位置と、壁などの設置場所（！！）が変わる。
         };
 
-        // 装備位置変更設定をキャッシュするか（毎フレームパースするのは無駄）
-        static bool? cachingEnabled = null;
-        static bool CachingEnabled
-        {
-            get
-            {
-                if (cachingEnabled.HasValue && cachingEnabled.Value == true) return true;
-                cachingEnabled = !Settings.ReadBool("DynamicEquipAdjustment", false);
-                return cachingEnabled.Value;
-            }
-        }
+        // 装備位置変更設定をキャッシュするか（毎フレームパースするのは無駄）。この設定自体はキャッシュしない。
+        static bool CachingEnabled => !Settings.ReadBool("DynamicEquipAdjustment", false);
 
         // 装備位置変更設定のキャッシュ（VRMモデルに合わせるかどうか、オフセット値）
         static readonly Dictionary<OcEquipSlot, bool> equipPositionIsAdujstedToVrmModel = new Dictionary<OcEquipSlot, bool>();
@@ -88,7 +82,7 @@ namespace Player2VRM
         // 装備の本来の親Transform
         static readonly Dictionary<OcPlEquipCtrl, Transform> originalParentTransform = new Dictionary<OcPlEquipCtrl, Transform>();
 
-        // VRMモデルのアニメータのキャッシュ（念の為OcPl別にキャッシュ）
+        // VRMモデルのアニメータのキャッシュ（OcPl別にキャッシュ）
         static readonly Dictionary<OcPl, Animator> plRelatedModelAnimator = new Dictionary<OcPl, Animator>();
 
         // 装備品一覧の取得
@@ -124,7 +118,9 @@ namespace Player2VRM
                 return offset;
             }
 
-            offset = Settings.ReadVector3($"{equipSlot2Key[equipSlot]}Offset", Vector3.zero);
+            offset = equipSlot2Key.TryGetValue(equipSlot, out var key)
+                ? Settings.ReadVector3($"{key}Offset", Vector3.zero)
+                : Vector3.zero;
             if (CachingEnabled) equipPositionOffsets.Add(equipSlot, offset);
             return offset;
 
@@ -137,8 +133,10 @@ namespace Player2VRM
                 return result;
             }
 
-            result = Settings.ReadBool($"{equipSlot2Key[equipSlot]}FollowsModel", false);
-            if(CachingEnabled) equipPositionIsAdujstedToVrmModel.Add(equipSlot, result);
+            result = equipSlot2Key.TryGetValue(equipSlot, out var key)
+                ? Settings.ReadBool($"{key}FollowsModel", false)
+                : false;
+            if (CachingEnabled) equipPositionIsAdujstedToVrmModel.Add(equipSlot, result);
             return result;
         }
 
@@ -149,7 +147,7 @@ namespace Player2VRM
                 anim = pl
                     .Animator.gameObject
                     .GetComponent<CloneHumanoid>()
-                    .GetVrmModel()
+                    .GetInstancedVRMModel()
                     .GetComponent<Animator>();
                 plRelatedModelAnimator[pl] = anim; // インデクサでのアクセスならkeyの存在有無にかかわらず追加・更新できる
             }
@@ -175,32 +173,33 @@ namespace Player2VRM
         // 矢筒は他の装備品と管理方法が違うので別途対応（やってることはほぼ同じ）
         static readonly Dictionary<OcPlCommon, Transform> quiverTransforms = new Dictionary<OcPlCommon, Transform>();
         static Vector3? quiverOffset = null;
-        static bool? isQuiverAdujstedToVrmModel = null;
+        // static bool? isQuiverAdujstedToVrmModel = null;
 
         static Vector3 GetQuiverOffset()
         {
-            if (quiverOffset.HasValue && EquipAdjustPos_OcPlEquipCtrl_lateMove.CachingEnabled) return quiverOffset.Value;
+            if (quiverOffset.HasValue && CachingEnabled) return quiverOffset.Value;
             quiverOffset = Settings.ReadVector3("EquipArrowOffset", Vector3.zero);
             return quiverOffset.Value;
         }
 
         static bool IsQuiverAdujstedToVrmModel()
         {
-            if (isQuiverAdujstedToVrmModel.HasValue && EquipAdjustPos_OcPlEquipCtrl_lateMove.CachingEnabled) return isQuiverAdujstedToVrmModel.Value;
-            isQuiverAdujstedToVrmModel = Settings.ReadBool("EquipArrowFollowsModel", false);
-            return isQuiverAdujstedToVrmModel.Value;
+            // ゲーム開始時にモデル追従の設定になっていると不具合が起きるので強制的に追従しない設定を反映させる。
+            return false;
+            //if (isQuiverAdujstedToVrmModel.HasValue && CachingEnabled) return isQuiverAdujstedToVrmModel.Value;
+            //isQuiverAdujstedToVrmModel = Settings.ReadBool("EquipArrowFollowsModel", false);
+            //return isQuiverAdujstedToVrmModel.Value;
         }
 
-        static void AdjustEquipPos(OcPl pl, OcPlCommon plCommon)
+        static void AdjustQuiverPos(OcPl pl, OcPlCommon plCommon)
         {
             Transform quiver;
             if (quiverTransforms.TryGetValue(plCommon, out quiver) == false || quiver == null)
             {
                 quiver = plCommon.AccessoryCtrl.transform.Find("OcQuiver");
-                if (quiver != null) quiverTransforms.Add(plCommon, quiver);
-            }
-
-            if (quiver == null) return;
+                if (quiver == null) return;
+                quiverTransforms.Add(plCommon, quiver);
+            }            
 
             if (IsQuiverAdujstedToVrmModel())
             {
@@ -234,7 +233,7 @@ namespace Player2VRM
                 AdjustEquipPos(plEquip);
             }
 
-            AdjustEquipPos(__instance, __instance.PlCommon);
+            AdjustQuiverPos(__instance, __instance.PlCommon);
         }
     }
 
@@ -421,7 +420,7 @@ namespace Player2VRM
         HumanPoseHandler orgPose, vrmPose;
         HumanPose hp = new HumanPose();
         GameObject instancedModel;
-        internal GameObject GetVrmModel() => instancedModel;
+        internal GameObject GetInstancedVRMModel() => instancedModel;
         VRMBlendShapeProxy blendProxy;
         Facial.FaceCtrl facialFace;
 
