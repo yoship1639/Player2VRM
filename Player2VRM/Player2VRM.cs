@@ -218,6 +218,8 @@ namespace Player2VRM
 
         static void Postfix(OcPl __instance)
         {
+            if (!Settings.ReadBool("UseEquipAdjustment", false)) return;
+
             var plEquipCtrl = __instance.EquipCtrl;
             var plCommon = __instance.PlCommon;
             var plEquips = GetPlEquips(plEquipCtrl);
