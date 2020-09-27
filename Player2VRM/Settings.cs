@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace Player2VRM
 {
@@ -57,6 +59,27 @@ namespace Player2VRM
             var res = defaultValue;
             bool.TryParse(str, out res);
             return res;
+        }
+
+        public static Vector3 ReadVector3(string key, Vector3 defaultValue = default)
+        {
+            var str = ReadSettings(key);
+            if (str == null) return defaultValue;
+            var match = new Regex("\\((?<x>[^,]*?),(?<y>[^,]*?),(?<z>[^,]*?)\\)").Match(str);
+            if (match.Success == false) return defaultValue;
+            try
+            {
+                return new Vector3()
+                {
+                    x = float.Parse(match.Groups["x"].Value),
+                    y = float.Parse(match.Groups["y"].Value),
+                    z = float.Parse(match.Groups["z"].Value)
+                };
+            }
+            catch(FormatException)
+            {
+                return defaultValue;
+            }
         }
     }
 }
