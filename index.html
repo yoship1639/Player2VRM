@@ -38,7 +38,7 @@
 					</h3>
 					<ul>
 						<li>本MODはクラフトピア専用のMODです。</li>
-						<li>本MODは現時点(2020/09/26)では「<b>シングル専用</b>」となっています。<b>マルチは非推奨ですがプレイできます(VRMマルチ対応はしていません)</b>。不具合が起こる可能性があります。</li>
+						<li>本MODは現時点(2020/09/30)ではマルチプレイ(α)が可能です。しかし、不具合が起こる可能性があります。</li>
 						<li>バグで起動できない可能性があります。<a href="https://twitter.com/yoship1639" target="_blank" rel="noopener noreferrer">@yoship1639</a>までご連絡ください。</li>
 						<li>マテリアル(シェーダ)の互換性の問題でモデルの見た目が崩壊する可能性があります。</li>
 						<li>公式のバージョンアップで本MODが動作しなくなる可能性があります。作者までご一報ください。</li>
@@ -49,6 +49,7 @@
 						<li><b>3Dモデル界隈は権利や版権に関する問題が起きやすいので、使用するモデルに関しては十分ご注意ください。</b></li>
 						<li>権利や版権に関する問題が多発する場合、本MODのアップデート及び配布を停止する可能性がございますのでご協力お願いいたします。</li>
 						<li>問題点や改善点がある方は<a href="https://twitter.com/yoship1639" target="_blank" rel="noopener noreferrer">@yoship1639</a>もしくは<a href="https://github.com/yoship1639/Player2VRM/issues" target="_blank" rel="noopener noreferrer">https://github.com/yoship1639/Player2VRM/issues</a>までお願いします。</li>
+						<li>マルチプレイを行う際には、<b>お互いにVRMモデルの権利・規約・IPが問題ないことを確認した上で</b>プレイするようお願い致します。</li>
 						<li>以上を理解したうえで、良識の範囲内で楽しいクラフトピアライフを送りましょう！</li>
 					</ul>
 					<h3 class="title is-3">
@@ -131,12 +132,12 @@
 						<img src="img/img004.png">
 					</div>
 					<p>
-						② 「Player2VRM_x.x.x.zip」を解凍すると「Craftopia_Managedに入れるdll」フォルダと「Player2VRM.dll」「Player2VRM.shaders」「settings.txt」が入っています。それぞれ以下の場所に配置してください。
+						② 「Player2VRM_x.x.x.zip」を解凍すると「Craftopia_Managedに入れるdll」フォルダと「Player2VRM.dll」「Player2VRM.shaders」「settings.txt」「avatars.txt」が入っています。それぞれ以下の場所に配置してください。
 					</p>
 					<ul>
 						<li>「Craftopia_Managedに入れるdll」フォルダの<b>中身全部</b>を「<b>Craftopia/Craftopia_Data/Managed</b>」フォルダ内にいれる</li>
 						<li>「Player2VRM.dll」と「Player2VRM.shaders」を「<b>Craftopia/BepInEx/plugins</b>」フォルダ内にいれる</li>
-						<li>「settings.txt」を[3. 始める前の準備]で説明する「Player2VRM」フォルダ内にいれる</li>
+						<li>「settings.txt」と「avatars.txt」を[3. 始める前の準備]で説明する「Player2VRM」フォルダ内にいれる</li>
 					</ul>
 					<div class="box">
 						<img src="img/img005.png">
@@ -174,8 +175,11 @@
 					<p>
 						④ 「Player2VRM」フォルダ内にいれた「settings.txt」で各種調整が出来ます。
 					</p>
+					<p>
+						⑤ 「Player2VRM」フォルダ内にいれた「avatars.txt」でプレイヤーごとに使用する設定を指定できます。詳しくはavatars.txt内の説明を読んでください。
+					</p>
 					<div class="box">
-						<img src="img/img007.png">
+						<img src="img/img009.png">
 					</div>
 					<p>
 						以上で準備完了です。クラフトピアを起動しプレイヤーモデルがVRMモデルに差し変わっていることを確認出来たら成功です。お疲れ様でした。
@@ -203,6 +207,42 @@
 					</p>
 					<p>
 						以上でバージョンアップは完了です。
+					</p>
+				</div>
+
+				<div class="content">
+					<h3 class="title is-3">
+						5. VRMマルチプレイ(α)のやり方
+					</h3>
+					<p>
+						ver1.3.0からVRMのマルチプレイが可能になります。マルチプレイ(α)では<b>マルチ相手のアバター情報を予め交換する事</b>で、通信の手間を省いたマルチプレイを実現しています。そのため、見知らぬ相手とはVRMマルチプレイは実現せず、お互いに気の知れた相手とのマルチプレイしか実現できません。予めご了承ください。
+					</p>
+					<p>
+						以下の手順でマルチプレイの準備を行います。
+					</p>
+					<p>
+						① 自身のVRMファイルと設定ファイルを準備します。分かりやすいように、クラフトピアのプレイヤー名を使用することをお勧めします。（プレイヤー名が「yoship」の場合、VRMファイルをyoship.vrmにリネーム。settings.txtをコピーしsettings_yoship.txtとして作成。settings_yoship.txtのModelNameをyoshipに変更）
+					</p>
+					<p>
+						② マルチプレイを行う<b>相手全員</b>の、①で作成したVRMファイルと設定ファイルをお互いに受け取りあいます。交換ではありません。
+					</p>
+					<p>
+						③ avatars.txtにマルチプレイ相手全員のプレイヤー名と設定ファイル名を入力します。<b>プレイヤー名は必ずクラフトピアのプレイヤー名と一致させてください</b>。例) yoship=settings_yoship.txt
+					</p>
+					<p>
+						④ settings.txtのUseMultiをtrueにします。
+					</p>
+					<p>
+						以上でマルチプレイの準備は完了です。例えば2人（taro, hanako）でマルチプレイをする場合、お互いに以下の様になっているはずです。
+					</p>
+					<div class="box">
+						<img src="img/img010.png">
+					</div>
+					<div class="box">
+						<img src="img/img011.png">
+					</div>
+					<p>
+						この状態でマルチプレイを行うと、相手の姿が変わってるはずです。お疲れ様でした。
 					</p>
 				</div>
 
@@ -239,6 +279,11 @@
 					<h3 class="title is-3">
 						更新履歴
 					</h3>
+					<label class="label">ver 1.3.0</label>
+					<ul>
+						<li>VRMマルチプレイに対応（α版）</li>
+						<li>プレイヤー毎にモデルを設定できる様に</li>
+					</ul>
 					<label class="label">ver 1.2.1</label>
 					<ul>
 						<li>瞬きする様に</li>
