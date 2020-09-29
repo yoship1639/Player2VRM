@@ -20,11 +20,15 @@ namespace Player2VRM
     {
         static void Postfix(OcPlHeadPrefabSetting __instance)
         {
-            var slave = __instance.GetComponentInParentRecursive<OcPlSlave>();
-            if (slave && !slave.FindNameInParentRecursive("UI"))
+            if (!Settings.ReadBool("UseMulti", false))
             {
-                var selfId = OcNetMng.Inst.NetPlId_Master;
-                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+                OcPl pl = __instance.GetComponentInParentRecursive<OcPl>();
+                var slave = pl as OcPlSlave;
+                if (slave && !slave.FindNameInParentRecursive("UI"))
+                {
+                    var selfId = OcNetMng.Inst.NetPlId_Master;
+                    if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
+                }
             }
 
             foreach (var mr in __instance.GetComponentsInChildren<MeshRenderer>())
@@ -88,38 +92,38 @@ namespace Player2VRM
         // 装備品一覧の取得
         internal static HashSet<OcPlEquip> GetPlEquips(OcPlEquipCtrl plEquipCtrl)
         {
-            if(plEquipCtrlCorrespondedplEquips.TryGetValue(plEquipCtrl, out var plEquips))
+            if (plEquipCtrlCorrespondedplEquips.TryGetValue(plEquipCtrl, out var plEquips))
             {
                 return plEquips;
             }
             else
             {
                 // OcPlEquipCtrlがDestoryされるタイミングがわからないので、新規追加のタイミングでDictionary中のOcPlEquipCtrlの存在チェックを実施する
-                foreach(var destroyedPlEquipCtrl in plEquipCtrlCorrespondedplEquips.Keys.Where(key => key == null).ToArray())
+                foreach (var destroyedPlEquipCtrl in plEquipCtrlCorrespondedplEquips.Keys.Where(key => key == null).ToArray())
                 {
-                   plEquipCtrlCorrespondedplEquips.Remove(destroyedPlEquipCtrl);
+                    plEquipCtrlCorrespondedplEquips.Remove(destroyedPlEquipCtrl);
                 }
                 foreach (var destroyedPlEquipCtrl in originalParentTransform.Keys.Where(key => key == null).ToArray())
                 {
                     originalParentTransform.Remove(destroyedPlEquipCtrl);
                 }
-                
+
                 var newPlEquips = new HashSet<OcPlEquip>();
                 plEquipCtrlCorrespondedplEquips.Add(plEquipCtrl, newPlEquips);
                 return newPlEquips;
             }
         }
 
-        static Vector3 GetOffset(OcEquipSlot equipSlot)
+        static Vector3 GetOffset(OcEquipSlot equipSlot, string playername = null)
         {
             Vector3 offset;
-            if(equipPositionOffsets.TryGetValue(equipSlot, out offset) && CachingEnabled)
+            if (equipPositionOffsets.TryGetValue(equipSlot, out offset) && CachingEnabled)
             {
                 return offset;
             }
 
             offset = equipSlot2Key.TryGetValue(equipSlot, out var key)
-                ? Settings.ReadVector3($"{key}Offset", Vector3.zero)
+                ? Settings.ReadVector3(playername, $"{key}Offset", Vector3.zero)
                 : Vector3.zero;
             if (CachingEnabled) equipPositionOffsets.Add(equipSlot, offset);
             return offset;
@@ -128,7 +132,7 @@ namespace Player2VRM
         static bool IsAdujstedToVrmModel(OcEquipSlot equipSlot)
         {
             bool result;
-            if(equipPositionIsAdujstedToVrmModel.TryGetValue(equipSlot, out result) && CachingEnabled)
+            if (equipPositionIsAdujstedToVrmModel.TryGetValue(equipSlot, out result) && CachingEnabled)
             {
                 return result;
             }
@@ -154,19 +158,19 @@ namespace Player2VRM
             return anim;
         }
 
-        static void AdjustEquipPos(OcPlEquip plEquip)
+        static void AdjustEquipPos(OcPlEquip plEquip, string playername = null)
         {
             if (IsAdujstedToVrmModel(plEquip.EquipSlot) && epuipBaseBones.TryGetValue(plEquip.EquipSlot, out var bone))
             {
                 var modelHeadTrans = GetPlRelatedModelAnimator(plEquip.OwnerPl).GetBoneTransform(bone);
                 plEquip.transform.SetParent(modelHeadTrans, false);
-                plEquip.SetLocalPosition(GetOffset(plEquip.EquipSlot));
+                plEquip.SetLocalPosition(GetOffset(plEquip.EquipSlot, playername));
                 return;
             }
             else
             {
                 plEquip.TransSelf.SetParent(originalParentTransform[plEquip.OwnerPl.EquipCtrl], true);
-                plEquip.TransSelf.localPosition += GetOffset(plEquip.EquipSlot);
+                plEquip.TransSelf.localPosition += GetOffset(plEquip.EquipSlot, playername);
             }
         }
 
@@ -175,10 +179,10 @@ namespace Player2VRM
         static Vector3? quiverOffset = null;
         // static bool? isQuiverAdujstedToVrmModel = null;
 
-        static Vector3 GetQuiverOffset()
+        static Vector3 GetQuiverOffset(string playername = null)
         {
             if (quiverOffset.HasValue && CachingEnabled) return quiverOffset.Value;
-            quiverOffset = Settings.ReadVector3("EquipArrowOffset", Vector3.zero);
+            quiverOffset = Settings.ReadVector3(playername, "EquipArrowOffset", Vector3.zero);
             return quiverOffset.Value;
         }
 
@@ -193,32 +197,41 @@ namespace Player2VRM
 
         static void AdjustQuiverPos(OcPl pl, OcPlCommon plCommon)
         {
+            string playername = Settings.getPlayerName(pl);
+
             Transform quiver;
             if (quiverTransforms.TryGetValue(plCommon, out quiver) == false || quiver == null)
             {
                 quiver = plCommon.AccessoryCtrl.transform.Find("OcQuiver");
                 if (quiver == null) return;
                 quiverTransforms.Add(plCommon, quiver);
-            }            
+            }
 
             if (IsQuiverAdujstedToVrmModel())
             {
                 var modelHeadTrans = GetPlRelatedModelAnimator(pl).GetBoneTransform(HumanBodyBones.Spine);
                 quiver.SetParent(modelHeadTrans, false);
-                quiver.SetLocalPosition(GetQuiverOffset());
+                quiver.SetLocalPosition(GetQuiverOffset(playername));
                 return;
             }
             else
             {
                 quiver.SetParent(plCommon.AccessoryCtrl, true);
-                quiver.localPosition += GetQuiverOffset();
+                quiver.localPosition += GetQuiverOffset(playername);
             }
 
         }
 
         static void Postfix(OcPl __instance)
         {
-            if (!Settings.ReadBool("UseEquipAdjustment", false)) return;
+            if (!Settings.isUseVRM(__instance))
+            {
+                return;
+            }
+
+            string playername = Settings.getPlayerName(__instance);
+
+            if (!Settings.ReadBool(playername, "UseEquipAdjustment", false)) return;
 
             var plEquipCtrl = __instance.EquipCtrl;
             var plCommon = __instance.PlCommon;
@@ -232,7 +245,7 @@ namespace Player2VRM
 
             foreach (var plEquip in plEquips)
             {
-                AdjustEquipPos(plEquip);
+                AdjustEquipPos(plEquip, playername);
             }
 
             AdjustQuiverPos(__instance, __instance.PlCommon);
@@ -265,26 +278,23 @@ namespace Player2VRM
     {
         static bool Prefix(OcPlEquip __instance, ref bool isDraw)
         {
-            var slave = __instance.GetComponentInParentRecursive<OcPlSlave>();
-            if (slave && !slave.FindNameInParentRecursive("UI"))
-            {
-                var selfId = OcNetMng.Inst.NetPlId_Master;
-                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return true;
-            }
+            OcPl pl = __instance.GetComponentInParentRecursive<OcPl>();
+            if (!Settings.isUseVRM(pl)) return true;
+            string playername = Settings.getPlayerName(pl);
 
-            if (__instance.EquipSlot == OcEquipSlot.EqHead && !Settings.ReadBool("DrawEquipHead", true))
+            if (__instance.EquipSlot == OcEquipSlot.EqHead && !Settings.ReadBool(playername, "DrawEquipHead", true))
             {
                 isDraw = false;
                 return true;
             }
 
-            if (__instance.EquipSlot == OcEquipSlot.Accessory && !Settings.ReadBool("DrawEquipAccessory", true))
+            if (__instance.EquipSlot == OcEquipSlot.Accessory && !Settings.ReadBool(playername, "DrawEquipAccessory", true))
             {
                 isDraw = false;
                 return true;
             }
 
-            if (__instance.EquipSlot == OcEquipSlot.WpSub && !Settings.ReadBool("DrawEquipShield", true))
+            if (__instance.EquipSlot == OcEquipSlot.WpSub && !Settings.ReadBool(playername, "DrawEquipShield", true))
             {
                 isDraw = false;
                 return true;
@@ -316,12 +326,9 @@ namespace Player2VRM
         {
             var go = __instance.GetRefField<OcPlCharacterBuilder, GameObject>("hair");
 
-            var slave = go.GetComponentInParentRecursive<OcPlSlave>();
-            if (slave && !slave.FindNameInParentRecursive("UI"))
-            {
-                var selfId = OcNetMng.Inst.NetPlId_Master;
-                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
-            }
+            OcPl pl = go.GetComponentInParentRecursive<OcPl>();
+            if (!Settings.isUseVRM(pl)) return;
+
 
             foreach (var mr in go.GetComponentsInChildren<MeshRenderer>())
             {
@@ -494,42 +501,55 @@ namespace Player2VRM
     [HarmonyPatch("charaChangeSteup")]
     static class OcPlVRM
     {
-        static GameObject vrmModel;
+        static Dictionary<string, GameObject> dic_vrmModel = new Dictionary<string, GameObject>();
 
         static void Postfix(OcPl __instance)
         {
-            var slave = __instance as OcPlSlave;
-            if (slave && !slave.FindNameInParentRecursive("UI"))
-            {
-                var selfId = OcNetMng.Inst.NetPlId_Master;
-                if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
-            }
 
-            if (vrmModel == null)
+            if (!Settings.isUseVRM(__instance)) return;
+
+            string playername = Settings.getPlayerName(__instance);
+
+
+            GameObject _vrmModel = null;
+            if (playername != null)
+            {
+                if (dic_vrmModel.ContainsKey(playername))
+                {
+                    _vrmModel = dic_vrmModel[playername];
+                }
+            }
+            if (_vrmModel == null)
             {
                 //カスタムモデル名の取得(設定ファイルにないためLogの出力が不自然にならないよう調整)
-                var ModelStr = Settings.ReadSettings("ModelName");
+                var ModelStr = Settings.ReadSettings(playername, "ModelName");
+
+
                 var path = Environment.CurrentDirectory + @"\Player2VRM\player.vrm";
                 if (ModelStr != null)
                     path = Environment.CurrentDirectory + @"\Player2VRM\" + ModelStr + ".vrm";
 
+
+
                 try
                 {
-                    vrmModel = ImportVRM(path);
+                    _vrmModel = ImportVRM(path);
                 }
                 catch
                 {
+                    string _settings_path = Settings.FindAvatorSettngs(playername);
+
                     if (ModelStr != null)
-                        UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。settings.txt内のModelNameを確認してください。");
+                        UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。" + _settings_path + "内のModelNameを確認してください。");
                     else
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
                     return;
                 }
 
-                var receiveShadows = Settings.ReadBool("ReceiveShadows");
+                var receiveShadows = Settings.ReadBool(playername, "ReceiveShadows");
                 if (!receiveShadows)
                 {
-                    foreach (var smr in vrmModel.GetComponentsInChildren<SkinnedMeshRenderer>())
+                    foreach (var smr in _vrmModel.GetComponentsInChildren<SkinnedMeshRenderer>())
                     {
                         smr.receiveShadows = false;
                     }
@@ -537,15 +557,15 @@ namespace Player2VRM
 
                 // プレイヤースケール調整
                 {
-                    var scale = Settings.ReadFloat("PlayerScale", 1.0f);
+                    var scale = Settings.ReadFloat(playername, "PlayerScale", 1.0f);
                     __instance.transform.localScale *= scale;
-                    vrmModel.transform.localScale /= scale;
+                    _vrmModel.transform.localScale /= scale;
                 }
             }
 
             foreach (var smr in __instance.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
-                if (Settings.ReadBool("UseRealToonShader", false))
+                if (Settings.ReadBool(playername, "UseRealToonShader", false))
                 {
                     foreach (var mat in smr.materials)
                     {
@@ -554,9 +574,9 @@ namespace Player2VRM
                 }
                 smr.enabled = false;
                 Transform trans = smr.transform;
-                while (vrmModel != null && trans != null)
+                while (_vrmModel != null && trans != null)
                 {
-                    if (trans.name.Contains(vrmModel.name))
+                    if (trans.name.Contains(_vrmModel.name))
                     {
                         smr.enabled = true;
                         break;
@@ -565,7 +585,11 @@ namespace Player2VRM
                 }
             }
 
-            __instance.Animator.gameObject.GetOrAddComponent<CloneHumanoid>().Setup(vrmModel, __instance.Animator, __instance is OcPlMaster);
+            __instance.Animator.gameObject.GetOrAddComponent<CloneHumanoid>().Setup(_vrmModel, __instance.Animator, __instance is OcPlMaster);
+            if (playername != null)
+            {
+                dic_vrmModel[playername] = _vrmModel;
+            }
         }
 
         private static GameObject ImportVRM(string path)
