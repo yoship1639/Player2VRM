@@ -537,7 +537,7 @@ namespace Player2VRM
                 }
                 catch
                 {
-                    string _settings_path = Settings.FindAvatorSettngs(playername);
+                    string _settings_path = Settings.FindAvatarSettngs(playername);
 
                     if (ModelStr != null)
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。" + _settings_path + "内のModelNameを確認してください。");

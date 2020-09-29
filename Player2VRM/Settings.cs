@@ -13,7 +13,7 @@ namespace Player2VRM
     static class Settings
     {
         private static readonly string SettingsPath = Environment.CurrentDirectory + @"\Player2VRM\settings.txt";
-        private static readonly string AvatorsPath = Environment.CurrentDirectory + @"\Player2VRM\avators.txt";
+        private static readonly string AvatarsPath = Environment.CurrentDirectory + @"\Player2VRM\avatars.txt";
 
         public static bool isUseVRM(OcPl __instance)
         {
@@ -27,7 +27,7 @@ namespace Player2VRM
             }
 
             string playername = getPlayerName(__instance);
-            string path = FindAvatorSettngs(playername);
+            string path = FindAvatarSettngs(playername);
             if (path == SettingsPath)
             {
                 return !is_slave;
@@ -63,7 +63,7 @@ namespace Player2VRM
             return playername;
         }
 
-        public static string FindAvatorSettngs(string key)
+        public static string FindAvatarSettngs(string key)
         {
             if (key == null)
             {
@@ -72,7 +72,7 @@ namespace Player2VRM
 
             try
             {
-                var lines = File.ReadAllLines(AvatorsPath);
+                var lines = File.ReadAllLines(AvatarsPath);
                 foreach (var line in lines)
                 {
                     try
@@ -97,7 +97,7 @@ namespace Player2VRM
         public static bool HasAvatarSettings(OcPl pl)
         {
             string playername = getPlayerName(pl);
-            string path = FindAvatorSettngs(playername);
+            string path = FindAvatarSettngs(playername);
             return path != SettingsPath;
         }
 
@@ -105,7 +105,7 @@ namespace Player2VRM
         {
             try
             {
-                string _SettingsPath = FindAvatorSettngs(playername);
+                string _SettingsPath = FindAvatarSettngs(playername);
                 if (_SettingsPath == null)
                 {
                     _SettingsPath = SettingsPath;
