@@ -510,7 +510,7 @@ namespace Player2VRM
 
             string playername = Settings.getPlayerName(__instance);
 
-            if(!Settings.ReadBool("DisableStool",false)) SROptions.Current.DisableStool = true;
+            if(Settings.ReadBool("DisableStool",false)) SROptions.Current.DisableStool = true;
 
             GameObject _vrmModel = null;
             if (playername != null)
