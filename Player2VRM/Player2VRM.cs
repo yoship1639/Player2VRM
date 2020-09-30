@@ -509,7 +509,8 @@ namespace Player2VRM
             if (!Settings.isUseVRM(__instance)) return;
 
             string playername = Settings.getPlayerName(__instance);
-            UnityEngine.Debug.LogError(playername);
+
+            if (Settings.ReadBool("DisableStool", false)) SROptions.Current.DisableStool = true;
 
             GameObject _vrmModel = null;
             if (playername != null)
