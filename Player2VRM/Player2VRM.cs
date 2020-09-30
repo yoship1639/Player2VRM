@@ -426,6 +426,7 @@ namespace Player2VRM
     [DefaultExecutionOrder(int.MaxValue - 100)]
     internal class CloneHumanoid : MonoBehaviour
     {
+        Animator orgAnim, vrmAnim;
         HumanPoseHandler orgPose, vrmPose;
         HumanPose hp = new HumanPose();
         GameObject instancedModel;
@@ -448,9 +449,10 @@ namespace Player2VRM
                     }
                 }
             }
-
+            this.orgAnim = orgAnim;
+            this.vrmAnim = instance.GetComponent<Animator>();
             instance.transform.SetParent(orgAnim.transform, false);
-            PoseHandlerCreate(orgAnim, instance.GetComponent<Animator>());
+            PoseHandlerCreate(orgAnim, this.vrmAnim);
             if (instancedModel == null)
             {
                 blendProxy = instance.GetComponent<VRMBlendShapeProxy>();
@@ -489,9 +491,18 @@ namespace Player2VRM
         void LateUpdate()
         {
             orgPose.GetHumanPose(ref hp);
+
+            if (orgAnim.GetCurrentAnimatorStateInfo(0).shortNameHash == OcAnimHash.Sprint)
+            {
+                // 走るとき足の動きがおかしいのを補正
+                hp.muscles[22] = -0.02f;
+                hp.muscles[30] = -0.02f;
+            }
+
             vrmPose.SetHumanPose(ref hp);
             instancedModel.transform.localPosition = Vector3.zero;
             instancedModel.transform.localRotation = Quaternion.identity;
+
             if (blendProxy)
                 blendProxy.Apply();
         }
@@ -505,7 +516,6 @@ namespace Player2VRM
 
         static void Postfix(OcPl __instance)
         {
-
             if (!Settings.isUseVRM(__instance)) return;
 
             string playername = Settings.getPlayerName(__instance);

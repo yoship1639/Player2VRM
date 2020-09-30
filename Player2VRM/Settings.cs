@@ -48,31 +48,18 @@ namespace Player2VRM
             {
                 if (__instance.CharaMakeData != null)
                 {
-                    playername = __instance.CharaMakeData.Name;
+                    return __instance.CharaMakeData.Name;
                 }
                 if (string.IsNullOrEmpty(playername))
                 {
                     int netid = plmng.getNetPlId(__instance);
                     if (netid != -1)
                     {
-                        playername = ntmng.getPlName(netid);
-
-                    }
-                }
-                if (string.IsNullOrEmpty(playername))
-                {
-                    for (var i = 0; i < 8; i++)
-                    {
-                        var slave = plmng.getPlSlave(i);
-                        if (__instance == slave)
-                        {
-                            playername = ntmng.getPlName(i + 1);
-                            break;
-                        }
+                         return ntmng.getPlName(netid);
                     }
                 }
             }
-            return playername;
+            return null;
         }
 
         public static string FindAvatarSettngs(string key)
