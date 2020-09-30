@@ -50,13 +50,25 @@ namespace Player2VRM
                 {
                     playername = __instance.CharaMakeData.Name;
                 }
-                if (playername == null || playername.Length == 0)
+                if (string.IsNullOrEmpty(playername))
                 {
                     int netid = plmng.getNetPlId(__instance);
                     if (netid != -1)
                     {
                         playername = ntmng.getPlName(netid);
 
+                    }
+                }
+                if (string.IsNullOrEmpty(playername))
+                {
+                    for (var i = 0; i < 8; i++)
+                    {
+                        var slave = plmng.getPlSlave(i);
+                        if (__instance == slave)
+                        {
+                            playername = ntmng.getPlName(i + 1);
+                            break;
+                        }
                     }
                 }
             }
