@@ -20,16 +20,8 @@ namespace Player2VRM
     {
         static void Postfix(OcPlHeadPrefabSetting __instance)
         {
-            if (!Settings.ReadBool("UseMulti", false))
-            {
-                OcPl pl = __instance.GetComponentInParentRecursive<OcPl>();
-                var slave = pl as OcPlSlave;
-                if (slave && !slave.FindNameInParentRecursive("UI"))
-                {
-                    var selfId = OcNetMng.Inst.NetPlId_Master;
-                    if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) return;
-                }
-            }
+            OcPl pl = __instance.GetComponentInParentRecursive<OcPl>();
+            if (!Settings.isUseVRM(pl)) return;
 
             foreach (var mr in __instance.GetComponentsInChildren<MeshRenderer>())
             {
@@ -544,7 +536,7 @@ namespace Player2VRM
 
                 try
                 {
-                    _vrmModel = ImportVRM(path);
+                    _vrmModel = ImportVRM(path, playername);
                 }
                 catch
                 {
@@ -603,7 +595,7 @@ namespace Player2VRM
             }
         }
 
-        private static GameObject ImportVRM(string path)
+        private static GameObject ImportVRM(string path, string playername)
         {
             var bytes = File.ReadAllBytes(path);
             var context = new VRMImporterContext();
@@ -616,7 +608,7 @@ namespace Player2VRM
             catch { }
 
             // モデルスケール調整
-            context.Root.transform.localScale *= Settings.ReadFloat("ModelScale", 1.0f);
+            context.Root.transform.localScale *= Settings.ReadFloat(playername, "ModelScale", 1.0f);
 
             return context.Root;
         }

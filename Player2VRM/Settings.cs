@@ -48,18 +48,18 @@ namespace Player2VRM
             {
                 if (__instance.CharaMakeData != null)
                 {
-                    return __instance.CharaMakeData.Name;
+                    playername = __instance.CharaMakeData.Name;
                 }
                 if (string.IsNullOrEmpty(playername))
                 {
                     int netid = plmng.getNetPlId(__instance);
                     if (netid != -1)
                     {
-                         return ntmng.getPlName(netid);
+                        playername = ntmng.getPlName(netid);
                     }
                 }
             }
-            return null;
+            return playername;
         }
 
         public static string FindAvatarSettngs(string key)
