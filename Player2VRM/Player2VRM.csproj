@@ -70,6 +70,10 @@
     <Reference Include="UniRx">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\UniRx.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Postprocessing.Runtime, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\Unity.Postprocessing.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.Timeline">
       <HintPath>D:\SteamLibrary\steamapps\common\Craftopia\Craftopia_Data\Managed\Unity.Timeline.dll</HintPath>
     </Reference>

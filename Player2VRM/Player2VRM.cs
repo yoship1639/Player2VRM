@@ -11,6 +11,7 @@ using UniRx;
 using UnityEngine;
 using VRM;
 using Oc.Item;
+using UnityEngine.Rendering.PostProcessing;
 
 namespace Player2VRM
 {
@@ -487,8 +488,8 @@ namespace Player2VRM
             if (orgAnim.GetCurrentAnimatorStateInfo(0).shortNameHash == OcAnimHash.Sprint)
             {
                 // 走るとき足の動きがおかしいのを補正
-                hp.muscles[22] = -0.02f;
-                hp.muscles[30] = -0.02f;
+                hp.muscles[22] = -0.05f;
+                hp.muscles[30] = -0.05f;
             }
 
             vrmPose.SetHumanPose(ref hp);
@@ -497,6 +498,84 @@ namespace Player2VRM
 
             if (blendProxy)
                 blendProxy.Apply();
+        }
+    }
+
+    [HarmonyPatch(typeof(OcPlCam))]
+    [HarmonyPatch("Start")]
+    static class OcPlCamVRM
+    {
+        static void Postfix(OcPlCam __instance)
+        {
+            __instance.gameObject.GetOrAddComponent<AdjustPlCam>();
+        }
+    }
+
+    class AdjustPlCam : MonoBehaviour
+    {
+        OcPlCam plCam;
+        Camera cam;
+        OcPlHeadPrefabSetting head;
+        bool enableAdjustDoF;
+
+        void Start()
+        {
+            plCam = GetComponent<OcPlCam>();
+            cam = GetComponent<Camera>();
+            head = FindObjectOfType<OcPlHeadPrefabSetting>();
+            var volume = FindObjectOfType<PostProcessVolume>();
+
+            if (Settings.ReadBool("UseBloom", false))
+            {
+                var bloom = volume.profile.GetSetting<Bloom>();
+                bloom.enabled.value = true;
+                bloom.active = true;
+                bloom.threshold.value = Settings.ReadFloat("BloomThreshold", 1.2f);
+                bloom.intensity.value = Settings.ReadFloat("BloomIntensity", 2.5f);
+            }
+
+            if (Settings.ReadBool("AutoExposure", false))
+            {
+                var autoExposure = volume.profile.GetSetting<AutoExposure>();
+                if (!autoExposure)
+                    autoExposure = volume.profile.AddSettings<AutoExposure>();
+                autoExposure.active = true;
+                autoExposure.enabled.value = true;
+                autoExposure.maxLuminance.value = 1.0f;
+                //colorGrading.tonemapper.value = Tonemapper.Neutral;
+                //colorGrading.saturation.value = 30.0f;
+            }
+
+            if (Settings.ReadBool("UseAmbientOcclusion", false))
+            {
+                var ao = volume.profile.GetSetting<AmbientOcclusion>();
+                ao.active = true;
+                ao.enabled.value = true;
+                ao.intensity.value = Settings.ReadFloat("AmbientOcclusionInteisity", 0.75f);
+                ao.thicknessModifier.value = 1.0f;
+            }
+
+            if (Settings.ReadBool("UseVignette", false))
+            {
+                var vignette = volume.profile.GetSetting<Vignette>();
+                vignette.active = true;
+                vignette.enabled.value = true;
+                vignette.intensity.value = 0.45f;
+                vignette.smoothness.value = 0.15f;
+                vignette.roundness.value = 0.0f;
+            }
+
+            enableAdjustDoF = Settings.ReadBool("AdjustDoF", true);
+        }
+
+        void Update()
+        {
+            if (enableAdjustDoF)
+            {
+                var dist = Vector3.Distance(cam.transform.position, head.transform.position);
+                plCam.SoCam.Dof_Def_FocusDist = Mathf.Min(dist, 4.4f);
+            }
+            
         }
     }
 

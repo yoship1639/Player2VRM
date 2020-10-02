@@ -134,24 +134,24 @@ namespace Player2VRM
         {
             var str = ReadSettings(playername, key);
             var res = defaultValue;
-            int.TryParse(str, out res);
-            return res;
+            if (int.TryParse(str, out res)) return res;
+            return defaultValue;
         }
 
         public static float ReadFloat(string playername, string key, float defaultValue = 0.0f)
         {
             var str = ReadSettings(playername, key);
             var res = defaultValue;
-            float.TryParse(str, out res);
-            return res;
+            if (float.TryParse(str, out res)) return res;
+            return defaultValue;
         }
 
         public static bool ReadBool(string playername, string key, bool defaultValue = false)
         {
             var str = ReadSettings(playername, key);
             var res = defaultValue;
-            bool.TryParse(str, out res);
-            return res;
+            if (bool.TryParse(str, out res)) return res;
+            return defaultValue;
         }
 
         public static Vector3 ReadVector3(string playername, string key, Vector3 defaultValue = default)
@@ -203,24 +203,24 @@ namespace Player2VRM
         {
             var str = ReadSettings(key);
             var res = defaultValue;
-            int.TryParse(str, out res);
-            return res;
+            if (int.TryParse(str, out res)) return res;
+            return defaultValue;
         }
 
         public static float ReadFloat(string key, float defaultValue = 0.0f)
         {
             var str = ReadSettings(key);
             var res = defaultValue;
-            float.TryParse(str, out res);
-            return res;
+            if (float.TryParse(str, out res)) return res;
+            return defaultValue;
         }
 
         public static bool ReadBool(string key, bool defaultValue = false)
         {
             var str = ReadSettings(key);
             var res = defaultValue;
-            bool.TryParse(str, out res);
-            return res;
+            if (bool.TryParse(str, out res)) return res;
+            return defaultValue;
         }
 
         public static Vector3 ReadVector3(string key, Vector3 defaultValue = default)
