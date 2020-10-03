@@ -116,7 +116,7 @@ namespace Player2VRM
             }
 
             offset = equipSlot2Key.TryGetValue(equipSlot, out var key)
-                ? Settings.ReadVector3(playername, $"{key}Offset", Vector3.zero)
+                ? Settings.ReadVector3(playername, $"{key}Offset", Vector3.zero, false)
                 : Vector3.zero;
             if (CachingEnabled) equipPositionOffsets.Add(equipSlot, offset);
             return offset;
@@ -131,7 +131,7 @@ namespace Player2VRM
             }
 
             result = equipSlot2Key.TryGetValue(equipSlot, out var key)
-                ? Settings.ReadBool($"{key}FollowsModel", false)
+                ? Settings.ReadBool($"{key}FollowsModel", false, false)
                 : false;
             if (CachingEnabled) equipPositionIsAdujstedToVrmModel.Add(equipSlot, result);
             return result;
@@ -175,7 +175,7 @@ namespace Player2VRM
         static Vector3 GetQuiverOffset(string playername = null)
         {
             if (quiverOffset.HasValue && CachingEnabled) return quiverOffset.Value;
-            quiverOffset = Settings.ReadVector3(playername, "EquipArrowOffset", Vector3.zero);
+            quiverOffset = Settings.ReadVector3(playername, "EquipArrowOffset", Vector3.zero, false);
             return quiverOffset.Value;
         }
 
@@ -305,8 +305,7 @@ namespace Player2VRM
         {
             if (type == OcAccessoryCtrl.AccType.Quiver)
             {
-                var playername = OcNetMng.Inst.PlMasterName;
-                return Settings.ReadBool(playername, "DrawEquipArrow");
+                return Settings.ReadBool("DrawEquipArrow");
             }
             return true;
         }
@@ -535,12 +534,11 @@ namespace Player2VRM
         {
             plCam = GetComponent<OcPlCam>();
             cam = GetComponent<Camera>();
-            cam.allowHDR = true;
             head = FindObjectOfType<OcPlHeadPrefabSetting>();
             var volume = FindObjectOfType<PostProcessVolume>();
-            volume.profile.isDirty = true;
 
-            var playername = OcNetMng.Inst.PlMasterName;
+            var master = plCam.GetRefField<OcPlCam, OcPlMaster>("_Owner");
+            var playername = Settings.getPlayerName(master);
 
             if (Settings.ReadBool(playername, "UseBloom", false))
             {
@@ -600,19 +598,60 @@ namespace Player2VRM
         }
     }
 
+    public class DelayVRM : MonoBehaviour
+    {
+        OcPl ocpl;
+        public void StartCheck(OcPl __instance)
+        {
+            ocpl = __instance;
+            StartCoroutine(CheckPlayerName(20));
+        }
+
+        private System.Collections.IEnumerator CheckPlayerName(int max_count)
+        {
+            int count = 0;
+            while (Settings.getPlayerName(ocpl) == null)
+            {
+                count++;
+                if (count >= max_count)
+                {
+                    yield break;
+                }
+                yield return new WaitForSeconds(1f);
+            }
+            OcPlVRM.DelayedPostfix(ocpl);
+        }
+
+    }
+
     [HarmonyPatch(typeof(OcPl))]
     [HarmonyPatch("charaChangeSteup")]
     static class OcPlVRM
     {
         static Dictionary<string, GameObject> dic_vrmModel = new Dictionary<string, GameObject>();
 
+        public static void DelayedPostfix(OcPl __instance)
+        {
+            //プレイヤー名が取れなかった場合の遅延処理
+            Postfix(__instance);
+        }
+
         static void Postfix(OcPl __instance)
         {
-            if (!Settings.isUseVRM(__instance)) return;
 
             string playername = Settings.getPlayerName(__instance);
+            if (playername == null)
+            {
+                GameObject obj = new GameObject("Delay_OcPlVRM");
+                DelayVRM dvm = obj.AddComponent<DelayVRM>();
+                dvm.StartCheck(__instance);
+                return;
+            }
 
-            if (Settings.ReadBool(playername, "DisableStool", false)) SROptions.Current.DisableStool = true;
+            if (!Settings.isUseVRM(__instance)) return;
+
+
+            if (Settings.ReadBool("DisableStool", false)) SROptions.Current.DisableStool = true;
 
             GameObject _vrmModel = null;
             if (playername != null)
@@ -626,7 +665,6 @@ namespace Player2VRM
             {
                 //カスタムモデル名の取得(設定ファイルにないためLogの出力が不自然にならないよう調整)
                 var ModelStr = Settings.ReadSettings(playername, "ModelName");
-
 
                 var path = Environment.CurrentDirectory + @"\Player2VRM\player.vrm";
                 if (ModelStr != null)
@@ -645,6 +683,15 @@ namespace Player2VRM
                     else
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
                     return;
+                }
+
+                OcPlHeadPrefabSetting hps = __instance.gameObject.GetComponentInChildren<OcPlHeadPrefabSetting>();
+                if (hps != null)
+                {
+                    foreach (var mr in hps.gameObject.GetComponentsInChildren<MeshRenderer>())
+                    {
+                        mr.enabled = false;
+                    }
                 }
 
                 var receiveShadows = Settings.ReadBool(playername, "ReceiveShadows");

@@ -15,6 +15,9 @@ namespace Player2VRM
         private static readonly string SettingsPath = Environment.CurrentDirectory + @"\Player2VRM\settings.txt";
         private static readonly string AvatarsPath = Environment.CurrentDirectory + @"\Player2VRM\avatars.txt";
 
+        private static Dictionary<string, string> dic_common_settings = new Dictionary<string, string>();
+        private static Dictionary<string, Dictionary<string, string>> dic_players_settings = new Dictionary<string, Dictionary<string, string>>();
+
         public static bool isUseVRM(OcPl __instance)
         {
             //if slave and not has avator setting then return false
@@ -26,20 +29,38 @@ namespace Player2VRM
                 if (SingletonMonoBehaviour<OcPlMng>.Inst.getPlSlave(selfId - 1) != slave) is_slave = true;
             }
 
-            string playername = getPlayerName(__instance);
-            string path = FindAvatarSettngs(playername);
-            if (path == SettingsPath)
+            bool use_multi = ReadBool("UseMulti", false);
+
+            if (!use_multi && is_slave)
             {
-                return !is_slave;
+                // マルチなしでホスト以外なら不使用
+                return false;
             }
-            else
+
+            if (!use_multi && !is_slave)
             {
+                // マルチなしホストなら基本設定で評価
                 return true;
             }
+
+            // マルチありでの評価
+            string playername = getPlayerName(__instance);
+
+            // プレイヤー名は取れない場合がある
+            if (playername == null)
+            {
+                return false;
+            }
+
+
+            // 設定が取れなかった場合はnullが返るのでfalseになる
+            return ReadBool(playername, "Enabled", false);
+
         }
 
         public static string getPlayerName(OcPl __instance)
         {
+
             //acquire playername
             string playername = null;
             OcPlMng plmng = OcPlMng.Inst;
@@ -50,15 +71,23 @@ namespace Player2VRM
                 {
                     playername = __instance.CharaMakeData.Name;
                 }
-                if (string.IsNullOrEmpty(playername))
+                if (playername == null || playername.Length == 0 || playername == "no name")
                 {
                     int netid = plmng.getNetPlId(__instance);
                     if (netid != -1)
                     {
                         playername = ntmng.getPlName(netid);
+
                     }
                 }
             }
+
+            if (playername == null || playername == "no name")
+            {
+                UnityEngine.Debug.LogWarning("プレイヤー名の取得に失敗しました");
+                return null;
+            }
+
             return playername;
         }
 
@@ -80,8 +109,10 @@ namespace Player2VRM
 
                         var args = line.Split('=');
                         if (args.Length != 2) continue;
+
                         if (args[0] == key)
                         {
+                            UnityEngine.Debug.LogWarning("プレイヤー別設定ファイルが見つかりました path=" + Environment.CurrentDirectory + @"\Player2VRM\" + args[1]);
                             return Environment.CurrentDirectory + @"\Player2VRM\" + args[1];
                         }
                     }
@@ -90,36 +121,54 @@ namespace Player2VRM
             }
             catch { }
 
+            UnityEngine.Debug.LogWarning("プレイヤー別設定ファイルがありません プレイヤー名=" + key);
+
             return SettingsPath;
         }
 
         public static bool HasAvatarSettings(OcPl pl)
         {
             string playername = getPlayerName(pl);
-            string path = FindAvatarSettngs(playername);
-            return path != SettingsPath;
+            return dic_players_settings.ContainsKey(playername);
         }
 
-        public static string ReadSettings(string playername, string key)
+        public static string ReadSettings(string playername, string key, bool useCache = true)
         {
+            if (useCache && dic_players_settings.ContainsKey(playername))
+            {
+                if (dic_players_settings[playername].ContainsKey(key))
+                {
+                    return dic_players_settings[playername][key];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            string retval = null;
             try
             {
                 string _SettingsPath = FindAvatarSettngs(playername);
                 if (_SettingsPath == null)
                 {
-                    _SettingsPath = SettingsPath;
+                    return null;
                 }
-
+                dic_players_settings.Add(playername, new Dictionary<string, string>());
                 var lines = File.ReadAllLines(_SettingsPath);
                 foreach (var line in lines)
                 {
                     try
                     {
+                        if (line.Length > 1 && line.Substring(0, 2) == "//") continue;
+
                         var args = line.Split('=');
                         if (args.Length != 2) continue;
+                        dic_players_settings[playername][args[0]] = args[1];
+
                         if (args[0] == key)
                         {
-                            return args[1];
+                            retval = args[1];
                         }
                     }
                     catch { }
@@ -127,10 +176,10 @@ namespace Player2VRM
             }
             catch { }
 
-            return null;
+            return retval;
         }
 
-        public static int ReadIntForPlayer(string playername, string key, int defaultValue = 0)
+        public static int ReadInt(string playername, string key, int defaultValue = 0, bool useCache = true)
         {
             var str = ReadSettings(playername, key);
             var res = defaultValue;
@@ -138,7 +187,7 @@ namespace Player2VRM
             return defaultValue;
         }
 
-        public static float ReadFloat(string playername, string key, float defaultValue = 0.0f)
+        public static float ReadFloat(string playername, string key, float defaultValue = 0.0f, bool useCache = true)
         {
             var str = ReadSettings(playername, key);
             var res = defaultValue;
@@ -146,7 +195,7 @@ namespace Player2VRM
             return defaultValue;
         }
 
-        public static bool ReadBool(string playername, string key, bool defaultValue = false)
+        public static bool ReadBool(string playername, string key, bool defaultValue = false, bool useCache = true)
         {
             var str = ReadSettings(playername, key);
             var res = defaultValue;
@@ -154,7 +203,7 @@ namespace Player2VRM
             return defaultValue;
         }
 
-        public static Vector3 ReadVector3(string playername, string key, Vector3 defaultValue = default)
+        public static Vector3 ReadVector3(string playername, string key, Vector3 defaultValue = default, bool useCache = true)
         {
             var str = ReadSettings(playername, key);
             if (str == null) return defaultValue;
@@ -175,8 +224,15 @@ namespace Player2VRM
             }
         }
 
-        public static string ReadSettings(string key)
+        public static string ReadSettings(string key, bool useCache = true)
         {
+            if (useCache && dic_common_settings.ContainsKey(key))
+            {
+                return dic_common_settings[key];
+            }
+
+            string retval = null;
+
             try
             {
                 var lines = File.ReadAllLines(SettingsPath);
@@ -184,22 +240,26 @@ namespace Player2VRM
                 {
                     try
                     {
+                        if (line.Length > 1 && line.Substring(0, 2) == "//") continue;
+
                         var args = line.Split('=');
                         if (args.Length != 2) continue;
+                        dic_common_settings[args[0]] = args[1];
                         if (args[0] == key)
                         {
-                            return args[1];
+                            retval = args[1];
                         }
+
                     }
                     catch { }
                 }
             }
             catch { }
 
-            return null;
+            return retval;
         }
 
-        public static int ReadInt(string key, int defaultValue = 0)
+        public static int ReadInt(string key, int defaultValue = 0, bool useCache = true)
         {
             var str = ReadSettings(key);
             var res = defaultValue;
@@ -207,7 +267,7 @@ namespace Player2VRM
             return defaultValue;
         }
 
-        public static float ReadFloat(string key, float defaultValue = 0.0f)
+        public static float ReadFloat(string key, float defaultValue = 0.0f, bool useCache = true)
         {
             var str = ReadSettings(key);
             var res = defaultValue;
@@ -215,7 +275,7 @@ namespace Player2VRM
             return defaultValue;
         }
 
-        public static bool ReadBool(string key, bool defaultValue = false)
+        public static bool ReadBool(string key, bool defaultValue = false, bool useCache = true)
         {
             var str = ReadSettings(key);
             var res = defaultValue;
@@ -223,7 +283,7 @@ namespace Player2VRM
             return defaultValue;
         }
 
-        public static Vector3 ReadVector3(string key, Vector3 defaultValue = default)
+        public static Vector3 ReadVector3(string key, Vector3 defaultValue = default, bool useCache = true)
         {
             var str = ReadSettings(key);
             if (str == null) return defaultValue;
