@@ -305,7 +305,8 @@ namespace Player2VRM
         {
             if (type == OcAccessoryCtrl.AccType.Quiver)
             {
-                return Settings.ReadBool("DrawEquipArrow");
+                var playername = OcNetMng.Inst.PlMasterName;
+                return Settings.ReadBool(playername, "DrawEquipArrow");
             }
             return true;
         }
@@ -513,59 +514,71 @@ namespace Player2VRM
 
     class AdjustPlCam : MonoBehaviour
     {
-        OcPlCam plCam;
-        Camera cam;
-        OcPlHeadPrefabSetting head;
-        bool enableAdjustDoF;
+        private OcPlCam plCam;
+        private Camera cam;
+        private OcPlHeadPrefabSetting head;
+        private bool enableAdjustDoF;
+
+        private Bloom bloom;
+        private ColorGrading colorGrading;
+        private AmbientOcclusion ambientOcclusion;
+        private Vignette vignette;
+
+        private float distanceRate;
+        private Vector3 basePos;
+        private Vector3 swordPos;
+        private Vector3 sprintPos;
+        private Vector3 swimPos;
+        private Vector3 jumpPos;
 
         void Start()
         {
             plCam = GetComponent<OcPlCam>();
             cam = GetComponent<Camera>();
+            cam.allowHDR = true;
             head = FindObjectOfType<OcPlHeadPrefabSetting>();
             var volume = FindObjectOfType<PostProcessVolume>();
+            volume.profile.isDirty = true;
 
-            if (Settings.ReadBool("UseBloom", false))
+            var playername = OcNetMng.Inst.PlMasterName;
+
+            if (Settings.ReadBool(playername, "UseBloom", false))
             {
-                var bloom = volume.profile.GetSetting<Bloom>();
+                bloom = volume.profile.GetSetting<Bloom>();
                 bloom.enabled.value = true;
                 bloom.active = true;
-                bloom.threshold.value = Settings.ReadFloat("BloomThreshold", 1.2f);
-                bloom.intensity.value = Settings.ReadFloat("BloomIntensity", 2.5f);
+                bloom.threshold.value = Settings.ReadFloat(playername, "BloomThreshold", 0.2f);
+                bloom.intensity.value = Settings.ReadFloat(playername, "BloomIntensity", 0.5f);
             }
 
-            if (Settings.ReadBool("AutoExposure", false))
+            if (Settings.ReadBool(playername, "UseAmbientOcclusion", false))
             {
-                var autoExposure = volume.profile.GetSetting<AutoExposure>();
-                if (!autoExposure)
-                    autoExposure = volume.profile.AddSettings<AutoExposure>();
-                autoExposure.active = true;
-                autoExposure.enabled.value = true;
-                autoExposure.maxLuminance.value = 1.0f;
-                //colorGrading.tonemapper.value = Tonemapper.Neutral;
-                //colorGrading.saturation.value = 30.0f;
+                ambientOcclusion = volume.profile.GetSetting<AmbientOcclusion>();
+                ambientOcclusion.enabled.value = true;
+                ambientOcclusion.active = true;
+                ambientOcclusion.intensity.value = Settings.ReadFloat(playername, "AmbientOcclusionInteisity", 1.0f);
+                ambientOcclusion.thicknessModifier.value = 1.0f;
+                ambientOcclusion.directLightingStrength.value = 1.0f;
             }
 
-            if (Settings.ReadBool("UseAmbientOcclusion", false))
+            if (Settings.ReadBool(playername, "UseVignette", false))
             {
-                var ao = volume.profile.GetSetting<AmbientOcclusion>();
-                ao.active = true;
-                ao.enabled.value = true;
-                ao.intensity.value = Settings.ReadFloat("AmbientOcclusionInteisity", 0.75f);
-                ao.thicknessModifier.value = 1.0f;
-            }
-
-            if (Settings.ReadBool("UseVignette", false))
-            {
-                var vignette = volume.profile.GetSetting<Vignette>();
-                vignette.active = true;
+                vignette = volume.profile.GetSetting<Vignette>();
                 vignette.enabled.value = true;
+                vignette.active = true;
                 vignette.intensity.value = 0.45f;
                 vignette.smoothness.value = 0.15f;
                 vignette.roundness.value = 0.0f;
             }
 
-            enableAdjustDoF = Settings.ReadBool("AdjustDoF", true);
+            enableAdjustDoF = Settings.ReadBool(playername, "AdjustDoF", true);
+
+            distanceRate = Settings.ReadFloat(playername, "CameraDistanceRate", 1.0f);
+            basePos = plCam.SoCam.CamOfs_Base;
+            swordPos = plCam.SoCam.CamOfs_Sword;
+            sprintPos = plCam.SoCam.CamOfs_SprintStraight;
+            swimPos = plCam.SoCam.CamOfs_Swim;
+            jumpPos = plCam.SoCam.CamOfs_Jump;
         }
 
         void Update()
@@ -575,7 +588,15 @@ namespace Player2VRM
                 var dist = Vector3.Distance(cam.transform.position, head.transform.position);
                 plCam.SoCam.Dof_Def_FocusDist = Mathf.Min(dist, 4.4f);
             }
-            
+
+            if (distanceRate != 1.0f)
+            {
+                plCam.SoCam.CamOfs_Base = basePos * distanceRate;
+                plCam.SoCam.CamOfs_Sword = swordPos * distanceRate;
+                plCam.SoCam.CamOfs_SprintStraight = sprintPos * distanceRate;
+                plCam.SoCam.CamOfs_Swim = swimPos * distanceRate;
+                plCam.SoCam.CamOfs_Jump = jumpPos * distanceRate;
+            }
         }
     }
 
@@ -591,7 +612,7 @@ namespace Player2VRM
 
             string playername = Settings.getPlayerName(__instance);
 
-            if (Settings.ReadBool("DisableStool", false)) SROptions.Current.DisableStool = true;
+            if (Settings.ReadBool(playername, "DisableStool", false)) SROptions.Current.DisableStool = true;
 
             GameObject _vrmModel = null;
             if (playername != null)
@@ -610,8 +631,6 @@ namespace Player2VRM
                 var path = Environment.CurrentDirectory + @"\Player2VRM\player.vrm";
                 if (ModelStr != null)
                     path = Environment.CurrentDirectory + @"\Player2VRM\" + ModelStr + ".vrm";
-
-
 
                 try
                 {
