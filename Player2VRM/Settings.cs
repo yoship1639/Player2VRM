@@ -12,8 +12,11 @@ namespace Player2VRM
 {
     static class Settings
     {
-        private static readonly string SettingsPath = Environment.CurrentDirectory + @"\Player2VRM\settings.txt";
-        private static readonly string AvatarsPath = Environment.CurrentDirectory + @"\Player2VRM\avatars.txt";
+        public static readonly string Player2VRMDir = Environment.CurrentDirectory + @"\Player2VRM";
+        public static readonly string PluginsDir = Environment.CurrentDirectory + @"\BepInEx\plugins";
+        public static readonly string ManagedDir = Environment.CurrentDirectory + @"\Craftopia_Data\Managed";
+        public static readonly string SettingsPath = Player2VRMDir + @"\settings.txt";
+        public static readonly string AvatarsPath = Player2VRMDir + @"\avatars.txt";
 
         private static Dictionary<string, string> dic_common_settings = new Dictionary<string, string>();
         private static Dictionary<string, Dictionary<string, string>> dic_players_settings = new Dictionary<string, Dictionary<string, string>>();
@@ -89,6 +92,33 @@ namespace Player2VRM
             }
 
             return playername;
+        }
+
+        public static string GetAvatarSettingsFileName(string key)
+        {
+            try
+            {
+                var lines = File.ReadAllLines(AvatarsPath);
+                foreach (var line in lines)
+                {
+                    try
+                    {
+                        if (line.Length > 1 && line.Substring(0, 2) == "//") continue;
+
+                        var args = line.Split('=');
+                        if (args.Length != 2) continue;
+
+                        if (args[0] == key)
+                        {
+                            return args[1];
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            return null;
         }
 
         public static string FindAvatarSettngs(string key)

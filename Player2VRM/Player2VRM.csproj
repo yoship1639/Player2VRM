@@ -109,6 +109,7 @@
   <ItemGroup>
     <Compile Include="AccessUtils.cs" />
     <Compile Include="Facial.cs" />
+    <Compile Include="FileLogger.cs" />
     <Compile Include="MainPlugin.cs" />
     <Compile Include="OVRLipSync\OVRLipSync.cs" />
     <Compile Include="OVRLipSync\OVRLipSyncContext.cs" />

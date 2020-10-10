@@ -12,6 +12,7 @@ using UnityEngine;
 using VRM;
 using Oc.Item;
 using UnityEngine.Rendering.PostProcessing;
+using Oc.UIDatas;
 
 namespace Player2VRM
 {
@@ -511,6 +512,7 @@ namespace Player2VRM
         }
     }
 
+    [DefaultExecutionOrder(int.MaxValue)]
     class AdjustPlCam : MonoBehaviour
     {
         private OcPlCam plCam;
@@ -534,11 +536,10 @@ namespace Player2VRM
         {
             plCam = GetComponent<OcPlCam>();
             cam = GetComponent<Camera>();
-            head = FindObjectOfType<OcPlHeadPrefabSetting>();
+            head = OcPlMaster.Inst.GetComponentInChildren<OcPlHeadPrefabSetting>();
             var volume = FindObjectOfType<PostProcessVolume>();
 
-            var master = plCam.GetRefField<OcPlCam, OcPlMaster>("_Owner");
-            var playername = Settings.getPlayerName(master);
+            var playername = Settings.getPlayerName(OcPlMaster.Inst);
 
             if (Settings.ReadBool(playername, "UseBloom", false))
             {
@@ -581,6 +582,11 @@ namespace Player2VRM
 
         void Update()
         {
+            if (head == null)
+            {
+                head = OcPlMaster.Inst.GetComponentInChildren<OcPlHeadPrefabSetting>();
+            }
+
             if (enableAdjustDoF)
             {
                 var dist = Vector3.Distance(cam.transform.position, head.transform.position);
@@ -638,7 +644,6 @@ namespace Player2VRM
 
         static void Postfix(OcPl __instance)
         {
-
             string playername = Settings.getPlayerName(__instance);
             if (playername == null)
             {
@@ -663,6 +668,21 @@ namespace Player2VRM
             }
             if (_vrmModel == null)
             {
+                // 個別の設定ファイルの有無
+                var settingsName = Settings.GetAvatarSettingsFileName(playername);
+                if (!string.IsNullOrEmpty(settingsName))
+                {
+                    FileLogger.WriteLine("アバター毎の設定が見つかりました。 " + settingsName + " を使います。");
+                    if (!File.Exists(Path.Combine(Settings.Player2VRMDir, settingsName)))
+                    {
+                        FileLogger.WriteLine(settingsName + " が見つかりませんでした。settings.txtの設定を使います。");
+                    }
+                    else
+                    {
+                        FileLogger.WriteLine("OK " + settingsName);
+                    }
+                }
+
                 //カスタムモデル名の取得(設定ファイルにないためLogの出力が不自然にならないよう調整)
                 var ModelStr = Settings.ReadSettings(playername, "ModelName");
 
@@ -679,11 +699,21 @@ namespace Player2VRM
                     string _settings_path = Settings.FindAvatarSettngs(playername);
 
                     if (ModelStr != null)
+                    {
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。" + _settings_path + "内のModelNameを確認してください。");
+                        if (!File.Exists(path))
+                        {
+                            UnityEngine.Debug.LogWarning(ModelStr + ".vrm が見つかりませんでした。" + _settings_path + " 内のModelNameを確認してください。");
+                        }
+                    }
                     else
+                    {
                         UnityEngine.Debug.LogWarning("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
+                        FileLogger.WriteLine("VRMファイルの読み込みに失敗しました。Player2VRMフォルダにplayer.vrmを配置してください。");
+                    }
                     return;
                 }
+                FileLogger.WriteLine(ModelStr + ".vrm の読み込みに成功しました。");
 
                 OcPlHeadPrefabSetting hps = __instance.gameObject.GetComponentInChildren<OcPlHeadPrefabSetting>();
                 if (hps != null)
