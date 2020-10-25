@@ -71,9 +71,6 @@ namespace Player2VRM
             //{ OcEquipSlot.WpMain, "EquipMain" }, // これの位置を変えると、ピッケル・斧の所持位置と、壁などの設置場所（！！）が変わる。
         };
 
-        // 装備位置変更設定をキャッシュするか（毎フレームパースするのは無駄）。この設定自体はキャッシュしない。
-        static bool CachingEnabled => !Settings.ReadBool("DynamicEquipAdjustment", false);
-
         // 装備位置変更設定のキャッシュ（VRMモデルに合わせるかどうか、オフセット値）
         static readonly Dictionary<OcEquipSlot, bool> equipPositionIsAdujstedToVrmModel = new Dictionary<OcEquipSlot, bool>();
         static readonly Dictionary<OcEquipSlot, Vector3> equipPositionOffsets = new Dictionary<OcEquipSlot, Vector3>();
@@ -108,10 +105,17 @@ namespace Player2VRM
             }
         }
 
+        static bool CachingEnabled(string playername)
+        {
+            var cache = !Settings.ReadBool(playername, "DynamicEquipAdjustment", false);
+            return cache;
+        }
+
         static Vector3 GetOffset(OcEquipSlot equipSlot, string playername = null)
         {
+            var cache = CachingEnabled(playername);
             Vector3 offset;
-            if (equipPositionOffsets.TryGetValue(equipSlot, out offset) && CachingEnabled)
+            if (equipPositionOffsets.TryGetValue(equipSlot, out offset) && cache)
             {
                 return offset;
             }
@@ -119,14 +123,15 @@ namespace Player2VRM
             offset = equipSlot2Key.TryGetValue(equipSlot, out var key)
                 ? Settings.ReadVector3(playername, $"{key}Offset", Vector3.zero, false)
                 : Vector3.zero;
-            if (CachingEnabled) equipPositionOffsets.Add(equipSlot, offset);
+            if (cache) equipPositionOffsets.Add(equipSlot, offset);
             return offset;
 
         }
-        static bool IsAdujstedToVrmModel(OcEquipSlot equipSlot)
+        static bool IsAdujstedToVrmModel(OcEquipSlot equipSlot, string playername)
         {
+            var cache = CachingEnabled(playername);
             bool result;
-            if (equipPositionIsAdujstedToVrmModel.TryGetValue(equipSlot, out result) && CachingEnabled)
+            if (equipPositionIsAdujstedToVrmModel.TryGetValue(equipSlot, out result) && cache)
             {
                 return result;
             }
@@ -134,7 +139,7 @@ namespace Player2VRM
             result = equipSlot2Key.TryGetValue(equipSlot, out var key)
                 ? Settings.ReadBool($"{key}FollowsModel", false, false)
                 : false;
-            if (CachingEnabled) equipPositionIsAdujstedToVrmModel.Add(equipSlot, result);
+            if (cache) equipPositionIsAdujstedToVrmModel.Add(equipSlot, result);
             return result;
         }
 
@@ -154,7 +159,7 @@ namespace Player2VRM
 
         static void AdjustEquipPos(OcPlEquip plEquip, string playername = null)
         {
-            if (IsAdujstedToVrmModel(plEquip.EquipSlot) && epuipBaseBones.TryGetValue(plEquip.EquipSlot, out var bone))
+            if (IsAdujstedToVrmModel(plEquip.EquipSlot, playername) && epuipBaseBones.TryGetValue(plEquip.EquipSlot, out var bone))
             {
                 var modelHeadTrans = GetPlRelatedModelAnimator(plEquip.OwnerPl).GetBoneTransform(bone);
                 plEquip.transform.SetParent(modelHeadTrans, false);
@@ -175,7 +180,8 @@ namespace Player2VRM
 
         static Vector3 GetQuiverOffset(string playername = null)
         {
-            if (quiverOffset.HasValue && CachingEnabled) return quiverOffset.Value;
+            var cache = CachingEnabled(playername);
+            if (quiverOffset.HasValue && cache) return quiverOffset.Value;
             quiverOffset = Settings.ReadVector3(playername, "EquipArrowOffset", Vector3.zero, false);
             return quiverOffset.Value;
         }
@@ -521,7 +527,6 @@ namespace Player2VRM
         private bool enableAdjustDoF;
 
         private Bloom bloom;
-        private ColorGrading colorGrading;
         private AmbientOcclusion ambientOcclusion;
         private Vignette vignette;
 
@@ -627,11 +632,12 @@ namespace Player2VRM
             }
             OcPlVRM.DelayedPostfix(ocpl);
         }
-
     }
 
+
+
     [HarmonyPatch(typeof(OcPl))]
-    [HarmonyPatch("charaChangeSteup")]
+    [HarmonyPatch(nameof(OcPl.charaChangeSteup))]
     static class OcPlVRM
     {
         static Dictionary<string, GameObject> dic_vrmModel = new Dictionary<string, GameObject>();

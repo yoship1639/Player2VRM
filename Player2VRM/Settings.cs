@@ -184,7 +184,7 @@ namespace Player2VRM
                 {
                     return null;
                 }
-                dic_players_settings.Add(playername, new Dictionary<string, string>());
+                if (useCache) dic_players_settings.Add(playername, new Dictionary<string, string>());
                 var lines = File.ReadAllLines(_SettingsPath);
                 foreach (var line in lines)
                 {
@@ -194,7 +194,7 @@ namespace Player2VRM
 
                         var args = line.Split('=');
                         if (args.Length != 2) continue;
-                        dic_players_settings[playername][args[0]] = args[1];
+                        if (useCache) dic_players_settings[playername][args[0]] = args[1];
 
                         if (args[0] == key)
                         {
@@ -211,7 +211,7 @@ namespace Player2VRM
 
         public static int ReadInt(string playername, string key, int defaultValue = 0, bool useCache = true)
         {
-            var str = ReadSettings(playername, key);
+            var str = ReadSettings(playername, key, useCache);
             var res = defaultValue;
             if (int.TryParse(str, out res)) return res;
             return defaultValue;
@@ -219,7 +219,7 @@ namespace Player2VRM
 
         public static float ReadFloat(string playername, string key, float defaultValue = 0.0f, bool useCache = true)
         {
-            var str = ReadSettings(playername, key);
+            var str = ReadSettings(playername, key, useCache);
             var res = defaultValue;
             if (float.TryParse(str, out res)) return res;
             return defaultValue;
@@ -227,7 +227,7 @@ namespace Player2VRM
 
         public static bool ReadBool(string playername, string key, bool defaultValue = false, bool useCache = true)
         {
-            var str = ReadSettings(playername, key);
+            var str = ReadSettings(playername, key, useCache);
             var res = defaultValue;
             if (bool.TryParse(str, out res)) return res;
             return defaultValue;
@@ -235,7 +235,7 @@ namespace Player2VRM
 
         public static Vector3 ReadVector3(string playername, string key, Vector3 defaultValue = default, bool useCache = true)
         {
-            var str = ReadSettings(playername, key);
+            var str = ReadSettings(playername, key, useCache);
             if (str == null) return defaultValue;
             var match = new Regex("\\((?<x>[^,]*?),(?<y>[^,]*?),(?<z>[^,]*?)\\)").Match(str);
             if (match.Success == false) return defaultValue;
@@ -274,7 +274,7 @@ namespace Player2VRM
 
                         var args = line.Split('=');
                         if (args.Length != 2) continue;
-                        dic_common_settings[args[0]] = args[1];
+                        if (useCache) dic_common_settings[args[0]] = args[1];
                         if (args[0] == key)
                         {
                             retval = args[1];
@@ -291,7 +291,7 @@ namespace Player2VRM
 
         public static int ReadInt(string key, int defaultValue = 0, bool useCache = true)
         {
-            var str = ReadSettings(key);
+            var str = ReadSettings(key, useCache);
             var res = defaultValue;
             if (int.TryParse(str, out res)) return res;
             return defaultValue;
@@ -299,7 +299,7 @@ namespace Player2VRM
 
         public static float ReadFloat(string key, float defaultValue = 0.0f, bool useCache = true)
         {
-            var str = ReadSettings(key);
+            var str = ReadSettings(key, useCache);
             var res = defaultValue;
             if (float.TryParse(str, out res)) return res;
             return defaultValue;
@@ -307,7 +307,7 @@ namespace Player2VRM
 
         public static bool ReadBool(string key, bool defaultValue = false, bool useCache = true)
         {
-            var str = ReadSettings(key);
+            var str = ReadSettings(key, useCache);
             var res = defaultValue;
             if (bool.TryParse(str, out res)) return res;
             return defaultValue;
@@ -315,7 +315,7 @@ namespace Player2VRM
 
         public static Vector3 ReadVector3(string key, Vector3 defaultValue = default, bool useCache = true)
         {
-            var str = ReadSettings(key);
+            var str = ReadSettings(key, useCache);
             if (str == null) return defaultValue;
             var match = new Regex("\\((?<x>[^,]*?),(?<y>[^,]*?),(?<z>[^,]*?)\\)").Match(str);
             if (match.Success == false) return defaultValue;
